@@ -332,7 +332,7 @@ export class GamePage {
       {type:'grammar',question:'Please ___ me know if you need anything.',options:['let','lets','letting','to let'],correct:'let',tip:'let + O + V nguyên mẫu'},
       {type:'grammar',question:'The report ___ be submitted by Friday.',options:['must','should','can','would'],correct:'must',tip:'must = bắt buộc, deadline cứng'},
       {type:'grammar',question:'___ arriving at the airport, she checked in.',options:['After','While','During','Before'],correct:'After',tip:'After + V-ing = sau khi'},
-      {type:'grammar',question:'The product is ___ than the competitor's.',options:['cheap','cheaper','cheapest','more cheap'],correct:'cheaper',tip:'Tính từ ngắn: thêm -er để so sánh hơn'},
+      {type:'grammar',question:"The product is ___ than the competitor's.",options:['cheap','cheaper','cheapest','more cheap'],correct:'cheaper',tip:'Tính từ ngắn: thêm -er để so sánh hơn'},
     ];
     const vocabSlice = pool.slice(0, Math.min(count, pool.length));
     const vocabQs = vocabSlice.map(item => {

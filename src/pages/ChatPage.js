@@ -411,7 +411,7 @@ export class ChatPage {
   }
 
   destroy() { if (this._unsub) this._unsub(); }
-}
+
   // ── DIRECT MESSAGES ──────────────────────────────────────
   async _loadDMContacts() {
     const me = this.store.get('currentUser');
@@ -539,3 +539,4 @@ export class ChatPage {
       document.getElementById('dmMessages').scrollTop = 999999;
     } catch(e) { Toast.err('Lỗi gửi tin: ' + e.message); }
   }
+}
