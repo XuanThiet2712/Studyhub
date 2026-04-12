@@ -2,12 +2,26 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
 <title>StudyHub — TOEIC 600+</title>
 <link rel="stylesheet" href="css/main.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
 </head>
 <body>
+
+<!-- ── MOBILE TOPBAR ── -->
+<div class="mobile-topbar" id="mobileTopbar" style="display:none">
+  <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Menu">☰</button>
+  <span class="mobile-topbar-title">StudyHub</span>
+  <div id="mobileTopbarAvatar" style="width:32px;height:32px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer" onclick="app?.router?.navigate('/profile')">👤</div>
+</div>
+
+<!-- ── SIDEBAR OVERLAY ── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
 <div id="app">
   <!-- Loading screen -->
@@ -24,73 +38,124 @@
   </div>
 </div>
 
+<!-- ── MOBILE BOTTOM NAV ── -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" style="display:none">
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/dashboard')" data-route="/dashboard">
+    <span class="icon">🏠</span><span>Trang chủ</span>
+  </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/vocabulary')" data-route="/vocabulary">
+    <span class="icon">📚</span><span>Từ vựng</span>
+  </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/chat')" data-route="/chat">
+    <span class="icon">💬</span><span>Chat</span>
+  </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/game')" data-route="/game">
+    <span class="icon">⚔️</span><span>Game</span>
+  </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/profile')" data-route="/profile">
+    <span class="icon">👤</span><span>Hồ sơ</span>
+  </button>
+</nav>
+
 <div id="toastRoot"></div>
 
-<!-- Load Google Fonts early -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400;1,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+<script>
+// ── MOBILE SIDEBAR TOGGLE ──
+function toggleMobileSidebar() {
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sidebarOverlay');
+  if (!sb) return;
+  const open = sb.classList.toggle('open');
+  if (open) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  else       { ov.classList.remove('open'); document.body.style.overflow = ''; }
+}
+function closeMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── UPDATE MOBILE BOTTOM NAV ACTIVE STATE ──
+function updateMobileNav(route) {
+  document.querySelectorAll('.mob-nav-item').forEach(btn => {
+    const r = btn.getAttribute('data-route');
+    btn.classList.toggle('active', route === r || (r === '/dashboard' && route === '/'));
+  });
+}
+
+// ── SHOW MOBILE UI WHEN LOGGED IN ──
+function showMobileUI(user) {
+  const isMobile = window.innerWidth <= 768;
+  document.getElementById('mobileTopbar').style.display = isMobile ? 'flex' : 'none';
+  document.getElementById('mobileBottomNav').style.display = isMobile ? 'flex' : 'none';
+  if (user) {
+    const ava = document.getElementById('mobileTopbarAvatar');
+    if (ava && user.avatar_id) {
+      ava.innerHTML = '<img src="'+window._avatarUrl(user.avatar_id)+'" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--border)">';
+    }
+  }
+}
+function hideMobileUI() {
+  document.getElementById('mobileTopbar').style.display = 'none';
+  document.getElementById('mobileBottomNav').style.display = 'none';
+}
+
+// ── RESIZE HANDLER ──
+window.addEventListener('resize', () => {
+  const logged = window.app?.store?.get('isLoggedIn');
+  if (logged) showMobileUI(window.app?.store?.get('currentUser'));
+  else hideMobileUI();
+});
+</script>
+
 <script type="module">
-// ── IMPORTS ──────────────────────────────────────────
 import { EventBus, Store, Router, App } from './src/core/index.js';
 import { SupabaseService, AuthService, RealtimeService } from './src/services/index.js';
 import { Sidebar, Toast } from './src/components/index.js';
-import { AuthPage }       from './src/pages/AuthPage.js';
-import { DashboardPage }  from './src/pages/DashboardPage.js';
-import { ChatPage }       from './src/pages/ChatPage.js';
-import { GamePage }       from './src/pages/GamePage.js';
-import { LeaderboardPage }from './src/pages/LeaderboardPage.js';
+import { AuthPage }        from './src/pages/AuthPage.js';
+import { DashboardPage }   from './src/pages/DashboardPage.js';
+import { ChatPage }        from './src/pages/ChatPage.js';
+import { GamePage }        from './src/pages/GamePage.js';
+import { LeaderboardPage } from './src/pages/LeaderboardPage.js';
+import { User }            from './src/models/index.js';
 
-// Lazy-loaded pages
-const lazyPage = async (module, Page, ...args) => {
-  const mod = await import(module);
-  return new mod[Page](...args);
-};
+// Expose avatarUrl helper for vanilla scripts
+window._avatarUrl = (id) => User.avatarUrl(id);
 
-// ── PROGRESS LOADING ──────────────────────────────────
-const setProgress = (pct) => {
-  const bar = document.getElementById('loadBar');
-  if (bar) bar.style.width = pct + '%';
-};
+const setProgress = (pct) => { const b = document.getElementById('loadBar'); if (b) b.style.width = pct + '%'; };
 
-// ── BOOT ──────────────────────────────────────────────
 async function boot() {
   setProgress(10);
 
-  // 1. Core
   const bus    = new EventBus();
-  const store  = new Store({
-    currentUser: null, isLoggedIn: false, onlineUsers: [], activeRoute: '/'
-  });
+  const store  = new Store({ currentUser: null, isLoggedIn: false, onlineUsers: [], activeRoute: '/' });
   const router = new Router();
   window.app   = { bus, store, router, services: {}, pages: {} };
 
   setProgress(25);
-
-  // 2. Supabase
   const db = new SupabaseService();
   await db.init();
   window.app.db = db;
 
   setProgress(45);
-
-  // 3. Auth service
   const auth     = new AuthService(db, store, bus);
   const realtime = new RealtimeService(db, store, bus);
   window.app.services.auth     = auth;
   window.app.services.realtime = realtime;
 
   setProgress(60);
-
-  // 4. Restore session
   const session = await auth.restoreSession();
 
   setProgress(75);
-
-  // 5. Setup layout
   const appEl = document.getElementById('app');
 
   function buildShell() {
+    closeMobileSidebar();
     appEl.innerHTML = `
     <aside class="sidebar" id="sidebar"></aside>
     <div class="main" id="mainContent"></div>`;
@@ -99,18 +164,18 @@ async function boot() {
     window.app.sidebar = sidebar;
   }
 
-  // 6. Register routes
   router.beforeEach(path => {
     const publicPaths = ['/', '/login', '/register'];
     if (!publicPaths.includes(path) && !store.get('currentUser')) return '/';
     if (publicPaths.includes(path) && store.get('currentUser'))   return '/dashboard';
     store.set('activeRoute', path);
     bus.emit('route:change', path);
+    updateMobileNav(path);
     return null;
   });
 
-  // AUTH routes
   router.register('/', () => {
+    hideMobileUI();
     appEl.innerHTML = '';
     const authPage = new AuthPage(auth, router);
     authPage.render();
@@ -119,12 +184,13 @@ async function boot() {
 
   router.register('/dashboard', () => {
     buildShell();
-    const page = new DashboardPage(db, store, bus);
-    page.render();
+    showMobileUI(store.get('currentUser'));
+    new DashboardPage(db, store, bus).render();
   });
 
   router.register('/chat', () => {
     buildShell();
+    showMobileUI(store.get('currentUser'));
     const page = new ChatPage(db, realtime, store, bus);
     page.render();
     window.chatPage = page;
@@ -132,6 +198,7 @@ async function boot() {
 
   router.register('/game', () => {
     buildShell();
+    showMobileUI(store.get('currentUser'));
     const page = new GamePage(db, realtime, store, bus);
     page.render();
     window.gamePage = page;
@@ -139,66 +206,57 @@ async function boot() {
 
   router.register('/leaderboard', () => {
     buildShell();
-    const page = new LeaderboardPage(db, store);
-    page.render();
-    window.lbPage = page;
+    showMobileUI(store.get('currentUser'));
+    new LeaderboardPage(db, store).render();
   });
 
-  // Lazy routes — load on demand
-  const lazyRoute = (path, file, PageClass, ...extraArgs) => {
+  const lazyRoute = (path, file, PageClass, ...extra) => {
     router.register(path, async () => {
       buildShell();
+      showMobileUI(store.get('currentUser'));
       const mod  = await import(file);
-      const page = new mod[PageClass](db, store, bus, ...extraArgs);
+      const page = new mod[PageClass](db, store, bus, ...extra);
       page.render();
     });
   };
 
-  lazyRoute('/vocabulary',  './src/pages/VocabularyPage.js',  'VocabularyPage',  realtime);
-  lazyRoute('/roadmap',     './src/pages/RoadmapPage.js',     'RoadmapPage');
-  lazyRoute('/wordlab',     './src/pages/WordLabPage.js',      'WordLabPage');
-  lazyRoute('/forgetting',  './src/pages/ForgettingPage.js',  'ForgettingPage');
-  lazyRoute('/notes',       './src/pages/NotesPage.js',       'NotesPage');
-  lazyRoute('/documents',   './src/pages/DocumentsPage.js',   'DocumentsPage');
-  lazyRoute('/pomodoro',    './src/pages/PomodoroPage.js',    'PomodoroPage');
+  lazyRoute('/vocabulary', './src/pages/VocabularyPage.js', 'VocabularyPage', realtime);
+  lazyRoute('/roadmap',    './src/pages/RoadmapPage.js',    'RoadmapPage');
+  lazyRoute('/wordlab',    './src/pages/WordLabPage.js',    'WordLabPage');
+  lazyRoute('/forgetting', './src/pages/ForgettingPage.js', 'ForgettingPage');
+  lazyRoute('/notes',      './src/pages/NotesPage.js',      'NotesPage');
+  lazyRoute('/documents',  './src/pages/DocumentsPage.js',  'DocumentsPage');
+  lazyRoute('/pomodoro',   './src/pages/PomodoroPage.js',   'PomodoroPage');
+  lazyRoute('/profile',    './src/pages/ProfilePage.js',    'ProfilePage', auth);
+
   router.register('/friends', async () => {
     buildShell();
+    showMobileUI(store.get('currentUser'));
     const mod  = await import('./src/pages/ChatPage.js');
     const page = new mod.ChatPage(db, realtime, store, bus);
     page.render();
   });
-  lazyRoute('/profile',     './src/pages/ProfilePage.js',     'ProfilePage', auth);
 
-  // Auth events
   bus.on('auth:login', async (user) => {
-    Toast.ok(`Chào mừng, ${user.display_name || user.username}! 👋`);
-    // Start presence
-    realtime.initPresence({
-      id: user.id, username: user.username,
-      display_name: user.display_name, avatar_id: user.avatar_id, xp: user.xp
-    });
+    Toast.ok('Chào mừng, ' + (user.display_name || user.username) + '! 👋');
+    realtime.initPresence({ id:user.id, username:user.username, display_name:user.display_name, avatar_id:user.avatar_id, xp:user.xp });
     router.navigate('/dashboard');
   });
 
   bus.on('auth:logout', () => {
     realtime.leavePresence();
+    hideMobileUI();
     router.navigate('/');
     Toast.info('Đã đăng xuất');
   });
 
   setProgress(90);
 
-  // 7. Start presence if logged in
   if (session) {
-    realtime.initPresence({
-      id: session.id, username: session.username,
-      display_name: session.display_name, avatar_id: session.avatar_id, xp: session.xp
-    });
+    realtime.initPresence({ id:session.id, username:session.username, display_name:session.display_name, avatar_id:session.avatar_id, xp:session.xp });
   }
 
   setProgress(100);
-
-  // 8. Remove loading screen and start router
   setTimeout(() => {
     document.getElementById('loadingScreen')?.remove();
     router.start();
@@ -214,8 +272,7 @@ boot().catch(err => {
     <div style="font-size:16px;font-weight:600;margin-bottom:8px">Lỗi khởi động</div>
     <div style="font-size:13px;color:#8896a5;margin-bottom:16px">${err.message}</div>
     <div style="font-size:12px;color:#b5c0cc;font-family:monospace;background:#f5f7fa;padding:12px;border-radius:8px;max-width:400px;text-align:left">
-      Kiểm tra: Supabase URL và API key trong<br>
-      <strong>src/services/index.js</strong>
+      Kiểm tra: Supabase URL và API key trong<br><strong>src/services/SupabaseService.js</strong>
     </div>
     <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer">Thử lại</button>
   </div>`;

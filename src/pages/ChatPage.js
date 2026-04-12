@@ -35,42 +35,42 @@ export class ChatPage {
       </div>
 
       <!-- CHAT TAB -->
-      <div id="tab-chat" style="display:grid;grid-template-columns:1fr 260px;gap:16px;height:calc(100vh - 240px)">
-        <div style="display:flex;flex-direction:column;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm)">
+      <div id="tab-chat" class="chat-layout">
+        <div class="chat-box">
 
-          <div style="flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:4px" id="msgList">
+          <div class="chat-messages" id="msgList">
             <div style="text-align:center;color:var(--muted);font-size:13px;padding:30px">
               <div style="font-size:28px;margin-bottom:8px">💬</div>Đang tải tin nhắn...
             </div>
           </div>
 
           <!-- Emoji picker -->
-          <div id="emojiPicker" style="display:none;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;gap:5px">
+          <div id="emojiPicker" class="chat-emoji-picker">
             ${EMOJIS.map(e=>`<button onclick="chatPage.insertEmoji('${e}')" style="font-size:19px;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:6px;transition:background .1s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background=''">${e}</button>`).join('')}
           </div>
 
           <!-- Input bar -->
-          <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--white)">
+          <div class="chat-input-bar">
             <div id="imgPreviewWrap" style="display:none;margin-bottom:8px;position:relative">
               <img id="imgPreview" style="max-height:80px;border-radius:8px;border:1px solid var(--border)">
               <button onclick="chatPage.clearImage()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#ef4444;color:#fff;border:none;font-size:11px;cursor:pointer;line-height:20px;text-align:center">✕</button>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <img src="${user.avatarUrl}" style="width:32px;height:32px;border-radius:50%;flex-shrink:0;border:2px solid var(--border)">
-              <button title="Emoji" onclick="chatPage.toggleEmoji()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:background .12s;flex-shrink:0" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">😊</button>
-              <label title="Gửi ảnh" style="cursor:pointer;font-size:18px;padding:4px;border-radius:6px;transition:background .12s;flex-shrink:0" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+            <div style="display:flex;gap:6px;align-items:center">
+              <img src="${user.avatarUrl}" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;border:2px solid var(--border)">
+              <button title="Emoji" onclick="chatPage.toggleEmoji()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;border-radius:6px;flex-shrink:0">😊</button>
+              <label title="Gửi ảnh" style="cursor:pointer;font-size:18px;padding:4px;border-radius:6px;flex-shrink:0">
                 🖼️<input type="file" accept="image/*" style="display:none" onchange="chatPage.onImageSelected(event)">
               </label>
-              <input class="form-input" id="chatInput" placeholder="Nhắn gì đó... (Enter để gửi)"
+              <input class="form-input" id="chatInput" placeholder="Nhắn gì đó..."
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatPage.sendMsg()}"
-                style="flex:1;border-radius:99px;padding:8px 14px;font-size:14px">
-              <button class="btn btn-primary btn-sm" style="border-radius:99px;padding:8px 16px;white-space:nowrap" onclick="chatPage.sendMsg()">Gửi ↗</button>
+                style="flex:1;border-radius:99px;padding:7px 12px;min-width:0">
+              <button class="btn btn-primary btn-sm" style="border-radius:99px;flex-shrink:0" onclick="chatPage.sendMsg()">Gửi ↗</button>
             </div>
           </div>
         </div>
 
         <!-- Online sidebar -->
-        <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="chat-sidebar">
           <div class="card" style="flex:1;overflow:hidden">
             <div class="card-title">🟢 Online (<span id="onlineCnt">0</span>)</div>
             <div style="overflow-y:auto;max-height:calc(100% - 40px)" id="onlineList">
