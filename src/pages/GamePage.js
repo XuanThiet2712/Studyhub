@@ -282,11 +282,28 @@ export class GamePage {
     await this.db.update('game_rooms', this._room.id, { status:'playing' });
   }
 
+  async _buildQuestionsFromDB() {
+    const user = this.store.get('currentUser');
+    try {
+      const rows = await this.db.select('vocabulary',{eq:{user_id:user.id},limit:300});
+      if (rows.length >= 4) {
+        const dbPool = rows.map(r=>({word:r.word,phonetic:r.phonetic||'',meaning:r.meaning_vi,type:'saved',example:r.example||''}));
+        const fallback = this._getBuiltinPool();
+        const seen = new Set(dbPool.map(x=>x.word));
+        this._questionPool = [...dbPool, ...fallback.filter(x=>!seen.has(x.word))];
+        return;
+      }
+    } catch(e) {}
+    this._questionPool = this._getBuiltinPool();
+  }
+
   _buildQuestions() {
-    // Build from TOEIC data + saved vocab
-    const saved = JSON.parse(localStorage.getItem('sh_vocab')||'[]');
+    this._questionPool = this._getBuiltinPool();
+    this._buildQuestionsFromDB(); // async upgrade
+  }
+
+  _getBuiltinPool() {
     const pool  = [
-      ...saved.map(v=>({word:v.word, phonetic:v.phonetic, meaning:v.meaning_vi||v.meaning, type:'saved'})),
       // Built-in TOEIC words
       {word:'office',phonetic:'/ˈɒfɪs/',meaning:'văn phòng'},{word:'meeting',phonetic:'/ˈmiːtɪŋ/',meaning:'cuộc họp'},
       {word:'manager',phonetic:'/ˈmænɪdʒər/',meaning:'quản lý'},{word:'deadline',phonetic:'/ˈdedlaɪn/',meaning:'hạn chót'},
@@ -304,16 +321,28 @@ export class GamePage {
       {word:'itinerary',phonetic:'/aɪˈtɪnərəri/',meaning:'lịch trình'},{word:'departure',phonetic:'/dɪˈpɑːtʃər/',meaning:'khởi hành'},
       {word:'productivity',phonetic:'/ˌprɒdʌkˈtɪvɪti/',meaning:'năng suất'},{word:'professional',phonetic:'/prəˈfeʃənl/',meaning:'chuyên nghiệp'},
     ];
-    this._questionPool = pool.filter((v,i,a)=>a.findIndex(x=>x.word===v.word)===i && v.word && v.meaning);
+    return pool.filter((v,i,a)=>a.findIndex(x=>x.word===v.word)===i && v.word && v.meaning);
   }
 
   _genQuestions(count=10) {
-    const pool  = [...this._questionPool].sort(()=>Math.random()-.5).slice(0,count);
-    return pool.map(item=>{
-      const wrongs = this._questionPool.filter(x=>x.word!==item.word).sort(()=>Math.random()-.5).slice(0,3);
-      const opts   = [...wrongs.map(w=>w.meaning), item.meaning].sort(()=>Math.random()-.5);
-      return { word:item.word, phonetic:item.phonetic||'', correct:item.meaning, options:opts };
+    const pool = [...this._questionPool].sort(()=>Math.random()-.5);
+    const grammarQs = [
+      {type:'grammar',question:'She ___ in this company for 5 years.',options:['work','works','has worked','is working'],correct:'has worked',tip:'Dùng Present Perfect với "for" chỉ khoảng thời gian'},
+      {type:'grammar',question:'The meeting was ___ due to bad weather.',options:['cancel','cancels','cancelled','cancelling'],correct:'cancelled',tip:'Câu bị động: was + V3'},
+      {type:'grammar',question:'Please ___ me know if you need anything.',options:['let','lets','letting','to let'],correct:'let',tip:'let + O + V nguyên mẫu'},
+      {type:'grammar',question:'The report ___ be submitted by Friday.',options:['must','should','can','would'],correct:'must',tip:'must = bắt buộc, deadline cứng'},
+      {type:'grammar',question:'___ arriving at the airport, she checked in.',options:['After','While','During','Before'],correct:'After',tip:'After + V-ing = sau khi'},
+      {type:'grammar',question:'The product is ___ than the competitor's.',options:['cheap','cheaper','cheapest','more cheap'],correct:'cheaper',tip:'Tính từ ngắn: thêm -er để so sánh hơn'},
+    ];
+    const vocabSlice = pool.slice(0, Math.min(count, pool.length));
+    const vocabQs = vocabSlice.map(item => {
+      const wrongs = pool.filter(x=>x.word!==item.word).sort(()=>Math.random()-.5).slice(0,3);
+      const opts = [...wrongs.map(w=>w.meaning), item.meaning].sort(()=>Math.random()-.5);
+      return {type:'vocab', word:item.word, phonetic:item.phonetic||'', correct:item.meaning, options:opts, example:item.example||''};
     });
+    // Mix vocab + grammar questions
+    const grammarMix = grammarQs.sort(()=>Math.random()-.5).slice(0, Math.min(3, count-vocabQs.length));
+    return [...vocabQs, ...grammarMix].sort(()=>Math.random()-.5).slice(0, count);
   }
 
   _showArena() {
@@ -331,8 +360,13 @@ export class GamePage {
     const sec = this._qTime||12;
     document.getElementById('qNum').textContent  = this._qIdx+1;
     document.getElementById('qTotal').textContent= this._questions.length;
-    document.getElementById('qWord').textContent = q.word;
-    document.getElementById('qPhone').textContent= q.phonetic;
+    if (q.type === 'grammar') {
+      document.getElementById('qWord').textContent = q.question || q.word;
+      document.getElementById('qPhone').textContent = '📝 Câu hỏi ngữ pháp';
+    } else {
+      document.getElementById('qWord').textContent = q.word;
+      document.getElementById('qPhone').textContent= q.phonetic;
+    }
     document.getElementById('myScore').textContent=this._myScore;
 
     const grid = document.getElementById('optionsGrid');
@@ -370,8 +404,11 @@ export class GamePage {
     if (btn && !correct) { btn.style.background='var(--red)'; btn.style.color='white'; btn.style.borderColor='var(--red)'; }
 
     if (correct) {
-      this._myScore += 10;
-      Toast.ok('+10 điểm! ✓', 800);
+      const timeBonus = Math.ceil((this._timeLeft||0)/2);
+      this._myScore += 10 + timeBonus;
+      Toast.ok(`+${10+timeBonus} điểm! 🎉`, 800);
+    } else if (q.tip) {
+      Toast.info('💡 ' + q.tip, 2000);
     }
 
     // Update score in DB

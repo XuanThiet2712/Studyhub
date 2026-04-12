@@ -49,6 +49,9 @@
   <button class="mob-nav-item" onclick="app?.router?.navigate('/chat')" data-route="/chat">
     <span class="icon">💬</span><span>Chat</span>
   </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/ai-tutor')" data-route="/ai-tutor">
+    <span class="icon">🤖</span><span>AI Tutor</span>
+  </button>
   <button class="mob-nav-item" onclick="app?.router?.navigate('/game')" data-route="/game">
     <span class="icon">⚔️</span><span>Game</span>
   </button>
@@ -118,6 +121,9 @@ import { EventBus, Store, Router, App } from './src/core/index.js';
 import { SupabaseService, AuthService, RealtimeService } from './src/services/index.js';
 import { Sidebar, Toast } from './src/components/index.js';
 import { AuthPage }        from './src/pages/AuthPage.js';
+import { FriendsPage }      from './src/pages/FriendsPage.js';
+import { AITutorPage }       from './src/pages/AITutorPage.js';
+import { NotificationSystem } from './src/components/NotificationSystem.js';
 import { DashboardPage }   from './src/pages/DashboardPage.js';
 import { ChatPage }        from './src/pages/ChatPage.js';
 import { GamePage }        from './src/pages/GamePage.js';
@@ -229,18 +235,30 @@ async function boot() {
   lazyRoute('/pomodoro',   './src/pages/PomodoroPage.js',   'PomodoroPage');
   lazyRoute('/profile',    './src/pages/ProfilePage.js',    'ProfilePage', auth);
 
-  router.register('/friends', async () => {
+  router.register('/friends', () => {
     buildShell();
     showMobileUI(store.get('currentUser'));
-    const mod  = await import('./src/pages/ChatPage.js');
-    const page = new mod.ChatPage(db, realtime, store, bus);
+    const page = new FriendsPage(db, store, bus, realtime);
     page.render();
   });
 
+  router.register('/ai-tutor', () => {
+    buildShell();
+    showMobileUI(store.get('currentUser'));
+    const page = new AITutorPage(db, store, bus);
+    page.render();
+  });
+
+  let notifSystem = null;
   bus.on('auth:login', async (user) => {
     Toast.ok('Chào mừng, ' + (user.display_name || user.username) + '! 👋');
     realtime.initPresence({ id:user.id, username:user.username, display_name:user.display_name, avatar_id:user.avatar_id, xp:user.xp });
     router.navigate('/dashboard');
+    // Init notification system
+    setTimeout(() => {
+      notifSystem = new NotificationSystem(db, store, bus);
+      notifSystem.init();
+    }, 1000);
   });
 
   bus.on('auth:logout', () => {

@@ -249,3 +249,37 @@ CREATE INDEX IF NOT EXISTS idx_lb_xp         ON leaderboard_cache(total_xp DESC)
 -- 2. Vào Project Settings > API > copy URL và anon key
 -- 3. Điền vào file src/services/SupabaseService.js
 -- ============================================================
+
+-- ============================================================
+-- STUDYHUB v4 ADDITIONS — Paste these after existing schema
+-- ============================================================
+
+-- CHALLENGES TABLE
+CREATE TABLE IF NOT EXISTS challenges (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  from_user    UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  to_user      UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  status       TEXT DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined','completed')),
+  room_id      UUID REFERENCES game_rooms(id),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS policies (paste in Supabase SQL editor)
+ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
+
+-- Friendships policies
+CREATE POLICY "Users can view their own friendships"
+  ON friendships FOR SELECT USING (auth.uid() = requester OR auth.uid() = addressee);
+CREATE POLICY "Users can create friend requests"
+  ON friendships FOR INSERT WITH CHECK (auth.uid() = requester);
+CREATE POLICY "Addressee can update friendship status"
+  ON friendships FOR UPDATE USING (auth.uid() = addressee OR auth.uid() = requester);
+CREATE POLICY "Users can delete their friendships"
+  ON friendships FOR DELETE USING (auth.uid() = requester OR auth.uid() = addressee);
+
+-- Enable Realtime on necessary tables
+ALTER PUBLICATION supabase_realtime ADD TABLE friendships;
+ALTER PUBLICATION supabase_realtime ADD TABLE challenges;
+ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
+ALTER PUBLICATION supabase_realtime ADD TABLE game_players;

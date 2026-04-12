@@ -32,6 +32,7 @@ export class ChatPage {
         <button class="tab active" onclick="chatPage.switchTab('chat',this)">💬 Chat chung</button>
         <button class="tab" onclick="chatPage.switchTab('friends',this)">👥 Bạn bè</button>
         <button class="tab" onclick="chatPage.switchTab('online',this)">🟢 Đang online</button>
+        <button class="tab" onclick="chatPage.switchTab('dm',this)">💌 Nhắn tin riêng</button>
       </div>
 
       <!-- CHAT TAB -->
@@ -97,6 +98,29 @@ export class ChatPage {
         </div>
       </div>
 
+
+      <!-- DM TAB -->
+      <div id="tab-dm" style="display:none">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh - 280px)">
+          <!-- Contact list -->
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+              <input class="form-input" id="dmSearch" placeholder="🔍 Tìm bạn bè..." oninput="chatPage.searchDMContacts(this.value)" style="font-size:12px">
+            </div>
+            <div style="flex:1;overflow-y:auto" id="dmContactList">
+              <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Đang tải danh sách bạn bè...</div>
+            </div>
+          </div>
+          <!-- Chat window -->
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column" id="dmChatWindow">
+            <div style="padding:20px;text-align:center;color:var(--muted);margin:auto">
+              <div style="font-size:40px;margin-bottom:10px">💌</div>
+              <div style="font-weight:600;margin-bottom:4px">Chọn bạn để nhắn tin</div>
+              <div style="font-size:12px">Tin nhắn riêng tư, chỉ 2 người xem được</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- ONLINE TAB -->
       <div id="tab-online" style="display:none">
         <div class="sec-hd"><span class="sec-hd-title">Ai đang online</span><span id="onlineBadge" class="badge badge-green">0 người</span></div>
@@ -113,11 +137,12 @@ export class ChatPage {
 
   switchTab(tab, btn) {
     this._activeTab = tab;
-    ['chat','friends','online'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
+    ['chat','friends','online','dm'].forEach(t => document.getElementById('tab-'+t)&&(document.getElementById('tab-'+t).style.display = 'none'));
     document.getElementById('tab-'+tab).style.display = tab === 'chat' ? 'grid' : 'block';
     document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     if (tab === 'friends') this._loadFriends();
+    if (tab === 'dm') this._loadDMContacts();
     if (tab === 'online')  this._renderOnlineGrid();
   }
 
@@ -387,3 +412,130 @@ export class ChatPage {
 
   destroy() { if (this._unsub) this._unsub(); }
 }
+  // ── DIRECT MESSAGES ──────────────────────────────────────
+  async _loadDMContacts() {
+    const me = this.store.get('currentUser');
+    const el = document.getElementById('dmContactList');
+    if (!el) return;
+    try {
+      const [sent, recv] = await Promise.all([
+        this.db.select('friendships',{eq:{requester:me.id,status:'accepted'}}).catch(()=>[]),
+        this.db.select('friendships',{eq:{addressee:me.id,status:'accepted'}}).catch(()=>[]),
+      ]);
+      const friendIds = [
+        ...sent.map(f=>f.addressee),
+        ...recv.map(f=>f.requester),
+      ].filter(Boolean);
+      if (!friendIds.length) { el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Chưa có bạn bè nào. Thêm bạn bè ở tab Bạn bè!</div>'; return; }
+      const friends = await this.db.select('profiles',{select:'id,username,display_name,avatar_id,is_online,xp',in:{id:friendIds}});
+      this._dmFriends = friends;
+      this._renderDMContacts(friends);
+    } catch(e) { el.innerHTML='<div style="padding:16px;color:var(--red);font-size:12px">Lỗi tải danh sách</div>'; }
+  }
+
+  _renderDMContacts(friends) {
+    const el = document.getElementById('dmContactList');
+    if (!el) return;
+    el.innerHTML = friends.map(f => `
+    <div onclick="chatPage.openDM('${f.id}','${f.display_name.replace(/'/g,"\\'")}','${f.avatar_id}')"
+      style="display:flex;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s" id="dmContact_${f.id}"
+      onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'">
+      <div style="position:relative;flex-shrink:0">
+        <img src="${User.avatarUrl(f.avatar_id)}" style="width:38px;height:38px;border-radius:50%;border:2px solid var(--border)">
+        <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:${f.is_online?'var(--green)':'var(--muted)'};border:2px solid var(--white)"></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.display_name}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.is_online?'<span style="color:var(--green)">● online</span>':'offline'}</div>
+      </div>
+    </div>`).join('');
+  }
+
+  searchDMContacts(q) {
+    if (!this._dmFriends) return;
+    const filtered = this._dmFriends.filter(f => f.display_name.toLowerCase().includes(q.toLowerCase()) || f.username.toLowerCase().includes(q.toLowerCase()));
+    this._renderDMContacts(filtered);
+  }
+
+  async openDM(friendId, friendName, avatarId) {
+    this._dmFriendId = friendId;
+    this._dmFriendName = friendName;
+    // Highlight selected contact
+    document.querySelectorAll('[id^="dmContact_"]').forEach(el => el.style.background = 'transparent');
+    const sel = document.getElementById(`dmContact_${friendId}`);
+    if (sel) sel.style.background = 'var(--blue-l)';
+
+    const me = this.store.get('currentUser');
+    const roomKey = [me.id, friendId].sort().join('_');
+    this._dmRoom = `dm_${roomKey}`;
+
+    const win = document.getElementById('dmChatWindow');
+    win.innerHTML = `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2)">
+      <img src="${User.avatarUrl(avatarId)}" style="width:34px;height:34px;border-radius:50%">
+      <div><div style="font-size:14px;font-weight:600">${friendName}</div><div style="font-size:11px;color:var(--muted)">Tin nhắn riêng</div></div>
+      <button onclick="app.router.navigate('/game')" class="btn btn-ghost btn-sm" style="margin-left:auto">⚔️ Thách đấu</button>
+    </div>
+    <div id="dmMessages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:0"></div>
+    <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg2)">
+      <input class="form-input" id="dmInput" placeholder="Nhắn tin..." style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')chatPage.sendDM()">
+      <button class="btn btn-primary btn-sm" onclick="chatPage.sendDM()">➤</button>
+    </div>`;
+
+    // Load messages
+    await this._loadDMMessages();
+
+    // Subscribe realtime
+    if (this._dmUnsub) this._dmUnsub.unsubscribe?.();
+    this._dmUnsub = this.db.subscribe(
+      `dm:${this._dmRoom}`,
+      {event:'INSERT',schema:'public',table:'chat_messages',filter:`room=eq.${this._dmRoom}`},
+      payload => this._appendDMMsg(payload.new, false)
+    );
+  }
+
+  async _loadDMMessages() {
+    try {
+      const msgs = await this.db.select('chat_messages',{
+        eq:{room:this._dmRoom},
+        order:{col:'created_at',asc:true},
+        limit:50
+      });
+      const el = document.getElementById('dmMessages');
+      if (!el) return;
+      el.innerHTML = '';
+      msgs.forEach(m => this._appendDMMsg(m, true));
+    } catch(e) {}
+  }
+
+  _appendDMMsg(msg, initial=false) {
+    const el = document.getElementById('dmMessages');
+    if (!el) return;
+    const me = this.store.get('currentUser');
+    const isMe = msg.sender_id === me.id;
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'}`;
+    const time = new Date(msg.created_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    div.innerHTML = `<div style="max-width:72%;background:${isMe?'var(--blue)':'var(--bg2)'};color:${isMe?'white':'var(--text)'};padding:9px 13px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};font-size:13px;line-height:1.5">
+      ${msg.content}
+      <div style="font-size:10px;opacity:.6;margin-top:3px;text-align:right">${time}</div>
+    </div>`;
+    el.appendChild(div);
+    if (!initial) el.scrollTop = el.scrollHeight;
+    if (initial && el.children.length === 1) el.scrollTop = el.scrollHeight;
+  }
+
+  async sendDM() {
+    const input = document.getElementById('dmInput');
+    const text = input?.value?.trim();
+    if (!text || !this._dmRoom) return;
+    input.value = '';
+    const me = this.store.get('currentUser');
+    try {
+      const msg = await this.db.insert('chat_messages',{
+        sender_id: me.id, content: text, room: this._dmRoom
+      });
+      this._appendDMMsg({...msg, sender_id:me.id}, false);
+      document.getElementById('dmMessages').scrollTop = 999999;
+    } catch(e) { Toast.err('Lỗi gửi tin: ' + e.message); }
+  }
