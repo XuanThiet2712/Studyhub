@@ -36,7 +36,7 @@ export class Vocabulary {
     const days = Vocabulary.SRS_INTERVALS[this.srsLevel] || 1;
     this.nextReview = new Date(Date.now() + days * 86400000);
     this.reviewCount++;
-    return { srsLevel: this.srs_level, nextReview: this.nextReview };
+    return { srsLevel: this.srsLevel, nextReview: this.nextReview };
   }
 
   toJSON() {

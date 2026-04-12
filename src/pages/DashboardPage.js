@@ -67,7 +67,7 @@ export class DashboardPage {
               <div style="font-size:13px;font-weight:600">${user.displayName}</div>
               <div style="font-size:12px;color:var(--muted);font-family:var(--mono)">${user.xp} XP · ${user.xpToNext} XP đến cấp ${user.level+1}</div>
               <div class="prog-track" style="margin-top:6px">
-                <div class="prog-fill" style="width:${Math.min((user.xp%(user.level*100))/(user.level)*1,100)}%;background:var(--accent-g)"></div>
+                <div class="prog-fill" style="width:${Math.min((user.xp%(user.level*100))/(user.level*100)*100,100)}%;background:var(--accent-g)"></div>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ export class DashboardPage {
         <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">Ngày ${today} · ${dp.progressPct}% hoàn thành</div>
         <div class="prog-track" style="margin-bottom:10px"><div class="prog-fill" style="width:${dp.progressPct}%;background:var(--green)"></div></div>
         ${['grammar','vocab','listening','reading','speaking'].map(s=>{
-          const done = dp[s.charAt(0).toUpperCase()+s.slice(1)+'Done']||dp[s+'Done'];
+          const done = dp[s + 'Done'];
           return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
             <span>${done?'✅':'○'}</span>
             <span style="color:${done?'var(--muted)':'var(--text)'};text-decoration:${done?'line-through':''}">${{grammar:'📐 Ngữ pháp',vocab:'📖 Từ vựng',listening:'🎧 Nghe',reading:'📄 Đọc hiểu',speaking:'🗣️ Nói'}[s]}</span>
