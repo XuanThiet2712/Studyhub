@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyHub — TOEIC 600+</title>
+<link rel="stylesheet" href="css/main.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+
+<div id="app">
+  <!-- Loading screen -->
+  <div id="loadingScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eff6ff,#f5f3ff)">
+    <div style="text-align:center">
+      <div style="font-family:'Lora',serif;font-style:italic;font-size:36px;font-weight:700;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">
+        StudyHub
+      </div>
+      <div style="font-size:13px;color:#8896a5;font-family:monospace">Đang khởi động...</div>
+      <div style="margin-top:16px;width:200px;height:3px;background:#e4e8f0;border-radius:99px;overflow:hidden;margin:16px auto 0">
+        <div id="loadBar" style="height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:99px;width:0%;transition:width .3s"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastRoot"></div>
+
+<!-- Load Google Fonts early -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400;1,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script type="module">
+// ── IMPORTS ──────────────────────────────────────────
+import { EventBus, Store, Router, App } from './src/core/index.js';
+import { SupabaseService, AuthService, RealtimeService } from './src/services/index.js';
+import { Sidebar, Toast } from './src/components/index.js';
+import { AuthPage }       from './src/pages/AuthPage.js';
+import { DashboardPage }  from './src/pages/DashboardPage.js';
+import { ChatPage }       from './src/pages/ChatPage.js';
+import { GamePage }       from './src/pages/GamePage.js';
+import { LeaderboardPage }from './src/pages/LeaderboardPage.js';
+
+// Lazy-loaded pages
+const lazyPage = async (module, Page, ...args) => {
+  const mod = await import(module);
+  return new mod[Page](...args);
+};
+
+// ── PROGRESS LOADING ──────────────────────────────────
+const setProgress = (pct) => {
+  const bar = document.getElementById('loadBar');
+  if (bar) bar.style.width = pct + '%';
+};
+
+// ── BOOT ──────────────────────────────────────────────
+async function boot() {
+  setProgress(10);
+
+  // 1. Core
+  const bus    = new EventBus();
+  const store  = new Store({
+    currentUser: null, isLoggedIn: false, onlineUsers: [], activeRoute: '/'
+  });
+  const router = new Router();
+  window.app   = { bus, store, router, services: {}, pages: {} };
+
+  setProgress(25);
+
+  // 2. Supabase
+  const db = new SupabaseService();
+  await db.init();
+  window.app.db = db;
+
+  setProgress(45);
+
+  // 3. Auth service
+  const auth     = new AuthService(db, store, bus);
+  const realtime = new RealtimeService(db, store, bus);
+  window.app.services.auth     = auth;
+  window.app.services.realtime = realtime;
+
+  setProgress(60);
+
+  // 4. Restore session
+  const session = await auth.restoreSession();
+
+  setProgress(75);
+
+  // 5. Setup layout
+  const appEl = document.getElementById('app');
+
+  function buildShell() {
+    appEl.innerHTML = `
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main" id="mainContent"></div>`;
+    const sidebar = new Sidebar(store, bus, router);
+    sidebar.mount(document.getElementById('sidebar'));
+    window.app.sidebar = sidebar;
+  }
+
+  // 6. Register routes
+  router.beforeEach(path => {
+    const publicPaths = ['/', '/login', '/register'];
+    if (!publicPaths.includes(path) && !store.get('currentUser')) return '/';
+    if (publicPaths.includes(path) && store.get('currentUser'))   return '/dashboard';
+    store.set('activeRoute', path);
+    bus.emit('route:change', path);
+    return null;
+  });
+
+  // AUTH routes
+  router.register('/', () => {
+    appEl.innerHTML = '';
+    const authPage = new AuthPage(auth, router);
+    authPage.render();
+    window.authPage = authPage;
+  });
+
+  router.register('/dashboard', () => {
+    buildShell();
+    const page = new DashboardPage(db, store, bus);
+    page.render();
+  });
+
+  router.register('/chat', () => {
+    buildShell();
+    const page = new ChatPage(db, realtime, store, bus);
+    page.render();
+    window.chatPage = page;
+  });
+
+  router.register('/game', () => {
+    buildShell();
+    const page = new GamePage(db, realtime, store, bus);
+    page.render();
+    window.gamePage = page;
+  });
+
+  router.register('/leaderboard', () => {
+    buildShell();
+    const page = new LeaderboardPage(db, store);
+    page.render();
+    window.lbPage = page;
+  });
+
+  // Lazy routes — load on demand
+  const lazyRoute = (path, file, PageClass, ...extraArgs) => {
+    router.register(path, async () => {
+      buildShell();
+      const mod  = await import(file);
+      const page = new mod[PageClass](db, store, bus, ...extraArgs);
+      page.render();
+    });
+  };
+
+  lazyRoute('/vocabulary',  './src/pages/VocabularyPage.js',  'VocabularyPage',  realtime);
+  lazyRoute('/roadmap',     './src/pages/RoadmapPage.js',     'RoadmapPage');
+  lazyRoute('/wordlab',     './src/pages/WordLabPage.js',      'WordLabPage');
+  lazyRoute('/forgetting',  './src/pages/ForgettingPage.js',  'ForgettingPage');
+  lazyRoute('/notes',       './src/pages/NotesPage.js',       'NotesPage');
+  lazyRoute('/documents',   './src/pages/DocumentsPage.js',   'DocumentsPage');
+  lazyRoute('/pomodoro',    './src/pages/PomodoroPage.js',    'PomodoroPage');
+  router.register('/friends', async () => {
+    buildShell();
+    const mod  = await import('./src/pages/ChatPage.js');
+    const page = new mod.ChatPage(db, realtime, store, bus);
+    page.render();
+  });
+  lazyRoute('/profile',     './src/pages/ProfilePage.js',     'ProfilePage', auth);
+
+  // Auth events
+  bus.on('auth:login', async (user) => {
+    Toast.ok(`Chào mừng, ${user.display_name || user.username}! 👋`);
+    // Start presence
+    realtime.initPresence({
+      id: user.id, username: user.username,
+      display_name: user.display_name, avatar_id: user.avatar_id, xp: user.xp
+    });
+    router.navigate('/dashboard');
+  });
+
+  bus.on('auth:logout', () => {
+    realtime.leavePresence();
+    router.navigate('/');
+    Toast.info('Đã đăng xuất');
+  });
+
+  setProgress(90);
+
+  // 7. Start presence if logged in
+  if (session) {
+    realtime.initPresence({
+      id: session.id, username: session.username,
+      display_name: session.display_name, avatar_id: session.avatar_id, xp: session.xp
+    });
+  }
+
+  setProgress(100);
+
+  // 8. Remove loading screen and start router
+  setTimeout(() => {
+    document.getElementById('loadingScreen')?.remove();
+    router.start();
+    Toast.init();
+  }, 300);
+}
+
+boot().catch(err => {
+  console.error('Boot error:', err);
+  document.getElementById('loadingScreen').innerHTML = `
+  <div style="text-align:center;padding:20px">
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Lỗi khởi động</div>
+    <div style="font-size:13px;color:#8896a5;margin-bottom:16px">${err.message}</div>
+    <div style="font-size:12px;color:#b5c0cc;font-family:monospace;background:#f5f7fa;padding:12px;border-radius:8px;max-width:400px;text-align:left">
+      Kiểm tra: Supabase URL và API key trong<br>
+      <strong>src/services/index.js</strong>
+    </div>
+    <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer">Thử lại</button>
+  </div>`;
+});
+</script>
+</body>
+</html>
