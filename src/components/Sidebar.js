@@ -27,6 +27,7 @@ export class Sidebar {
     );
     this.bus.on('route:change', () => this._updateActive());
     this.render();
+    this._watchNetwork();
   }
 
   render() {
@@ -102,6 +103,11 @@ export class Sidebar {
     </nav>
 
     <div class="sidebar-footer">
+      <div id="netStatus" class="net-status ${navigator.onLine ? 'net-online' : 'net-offline'}">
+        <span class="net-dot"></span>
+        <span class="net-label">${navigator.onLine ? 'Đã kết nối' : 'Mất mạng'}</span>
+        <span class="net-ping" id="netPing"></span>
+      </div>
       <button class="logout-btn" onclick="app.services.auth.logout()">
         🚪 Đăng xuất
       </button>
@@ -131,5 +137,46 @@ export class Sidebar {
     });
   }
 
-  destroy() { this._unsubs.forEach(u => u()); }
+  _watchNetwork() {
+    const update = (online) => {
+      const el = document.getElementById('netStatus');
+      const lbl = document.getElementById('netStatus')?.querySelector('.net-label');
+      if (!el) return;
+      el.className = 'net-status ' + (online ? 'net-online' : 'net-offline');
+      if (lbl) lbl.textContent = online ? 'Đã kết nối' : 'Mất mạng';
+      if (!online) {
+        const ping = document.getElementById('netPing');
+        if (ping) ping.textContent = '';
+      }
+    };
+    this._onOnline  = () => { update(true);  this._measurePing(); };
+    this._onOffline = () => update(false);
+    window.addEventListener('online',  this._onOnline);
+    window.addEventListener('offline', this._onOffline);
+    // Measure ping every 30s
+    this._measurePing();
+    this._pingInterval = setInterval(() => this._measurePing(), 30000);
+  }
+
+  async _measurePing() {
+    const pingEl = document.getElementById('netPing');
+    if (!pingEl || !navigator.onLine) return;
+    try {
+      const t0 = performance.now();
+      await fetch('https://www.google.com/favicon.ico?_=' + Date.now(), { mode: 'no-cors', cache: 'no-store' });
+      const ms = Math.round(performance.now() - t0);
+      pingEl.textContent = ms + 'ms';
+      // Color-code ping
+      pingEl.style.color = ms < 100 ? 'var(--green)' : ms < 300 ? 'var(--orange)' : 'var(--red)';
+    } catch {
+      pingEl.textContent = '';
+    }
+  }
+
+  destroy() {
+    this._unsubs.forEach(u => u());
+    if (this._onOnline)  window.removeEventListener('online',  this._onOnline);
+    if (this._onOffline) window.removeEventListener('offline', this._onOffline);
+    if (this._pingInterval) clearInterval(this._pingInterval);
+  }
 }

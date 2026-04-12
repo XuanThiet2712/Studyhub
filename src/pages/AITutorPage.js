@@ -1,5 +1,68 @@
 import { Toast } from '../components/index.js';
 
+// ★ ĐIỀN GEMINI API KEY VÀO ĐÂY (FREE hoàn toàn)
+// Lấy tại: https://aistudio.google.com → Get API Key → Create API key
+const GEMINI_API_KEY = 'AIzaSyDNMG_rzkHwSBfGlRYE2hojqCvJTt0uQh4';
+
+// Model + API version — tự động fallback nếu lỗi
+const _AI_CANDIDATES = [
+  { api: 'v1beta', model: 'gemini-2.0-flash' },
+  { api: 'v1beta', model: 'gemini-2.0-flash-lite' },
+  { api: 'v1',     model: 'gemini-1.5-flash' },
+  { api: 'v1',     model: 'gemini-1.5-flash-8b' },
+  { api: 'v1',     model: 'gemini-1.5-pro' },
+];
+
+async function callAI(systemPrompt, messages) {
+  if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_KEY_HERE') {
+    throw new Error('Chưa điền Gemini API key! Mở AITutorPage.js và điền key vào dòng đầu.');
+  }
+  // Nhét system prompt vào message đầu (tương thích mọi model)
+  const contents = [
+    { role: 'user',  parts: [{ text: systemPrompt }] },
+    { role: 'model', parts: [{ text: 'Đã hiểu. Tôi sẽ hỗ trợ bạn theo đúng vai trò.' }] },
+    ...messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }))
+  ];
+  const body = {
+    contents,
+    generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+  };
+  let lastErr;
+  for (const { api, model } of _AI_CANDIDATES) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data?.error?.message || `HTTP ${res.status}`;
+        const shouldFallback = res.status === 429
+          || res.status === 404
+          || msg.includes('quota')
+          || msg.includes('RESOURCE_EXHAUSTED')
+          || msg.includes('not found')
+          || msg.includes('not supported');
+        if (shouldFallback) { lastErr = new Error(msg); continue; }
+        throw new Error(msg);
+      }
+      console.log(`✅ AI dùng model: ${model}`);
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, không có phản hồi.';
+    } catch(e) {
+      lastErr = e;
+      const shouldFallback = e.message.includes('quota') || e.message.includes('RESOURCE_EXHAUSTED')
+        || e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('429');
+      if (!shouldFallback) throw e;
+    }
+  }
+  throw lastErr || new Error('Không có model nào khả dụng. Kiểm tra API key tại aistudio.google.com');
+}
+
 export class AITutorPage {
   constructor(db, store, bus) {
     this.db = db; this.store = store; this.bus = bus;
@@ -253,22 +316,18 @@ export class AITutorPage {
     const typingId = this.appendTyping();
     try {
       await this.loadProgressData();
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:1000,
-          system: this._buildSystemPrompt(),
-          messages: [...this._messages.slice(-12).map(m=>({role:m.role,content:m.content})), {role:'user',content:text}]
-        })
-      });
-      const data = await response.json();
-      const reply = data.content?.[0]?.text || 'Xin lỗi, có lỗi xảy ra.';
+      const msgs = [...this._messages.slice(-12).map(m=>({role:m.role,content:m.content})), {role:'user',content:text}];
+      const reply = await callAI(this._buildSystemPrompt(), msgs);
       this.removeTyping(typingId);
       this.appendMessage('assistant', reply);
       this._messages.push({role:'user',content:text},{role:'assistant',content:reply});
     } catch(e) {
       this.removeTyping(typingId);
-      this.appendMessage('assistant', `❌ Lỗi kết nối AI: ${e.message}\n\nHãy kiểm tra kết nối mạng và thử lại.`);
+      this.appendMessage('assistant', `❌ Lỗi AI: ${e.message}\n\n${
+        !GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_KEY_HERE'
+          ? '⚠️ Chưa điền Gemini API key! Mở AITutorPage.js dòng đầu và điền key vào.'
+          : 'Thử lại sau ít giây. Nếu vẫn lỗi, kiểm tra key tại aistudio.google.com'
+      }`);
     } finally {
       this._loading = false;
       if (btn) { btn.disabled=false; btn.textContent='➤'; }
@@ -280,17 +339,10 @@ export class AITutorPage {
     el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:30px;margin-bottom:8px">⏳</div>AI đang tạo bài đọc...</div>`;
     try {
       const p = this._progressData || {};
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:1200,
-          messages:[{role:'user',content:`Tạo 1 bài đọc TOEIC Part 6-7 về chủ đề "${this._readingTopic||'Workplace'}".
+      const prompt2 = `Tạo 1 bài đọc TOEIC Part 6-7 về chủ đề "${this._readingTopic||'Workplace'}".
 Format JSON CHÍNH XÁC như sau (không có gì khác ngoài JSON):
-{"passage":"đoạn văn 80-120 từ tiếng Anh có 2 chỗ trống đánh dấu [BLANK1] và [BLANK2]","questions":[{"q":"[BLANK1] is best completed by:","opts":["A. organize","B. organized","C. organizing","D. organization"],"ans":"B","exp":"Giải thích ngắn"},{"q":"[BLANK2] is best completed by:","opts":["A. however","B. therefore","C. although","D. besides"],"ans":"B","exp":"Giải thích ngắn"},{"q":"What is the main purpose of this email?","opts":["A. To announce a meeting","B. To request information","C. To confirm an order","D. To apply for a job"],"ans":"A","exp":"Giải thích ngắn"}],"vocab":[{"word":"word","meaning":"nghĩa"}]}`}]
-        })
-      });
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '';
+{"passage":"đoạn văn 80-120 từ tiếng Anh có 2 chỗ trống đánh dấu [BLANK1] và [BLANK2]","questions":[{"q":"[BLANK1] is best completed by:","opts":["A. organize","B. organized","C. organizing","D. organization"],"ans":"B","exp":"Giải thích ngắn"},{"q":"[BLANK2] is best completed by:","opts":["A. however","B. therefore","C. although","D. besides"],"ans":"B","exp":"Giải thích ngắn"},{"q":"What is the main purpose of this email?","opts":["A. To announce a meeting","B. To request information","C. To confirm an order","D. To apply for a job"],"ans":"A","exp":"Giải thích ngắn"}],"vocab":[{"word":"word","meaning":"nghĩa"}]}`;
+      const text = await callAI('Bạn là AI tạo bài tập TOEIC. Chỉ trả về JSON, không có gì khác.', [{role:'user',content:prompt2}]);
       const json = JSON.parse(text.replace(/```json|```/g,'').trim());
       this._renderReading(el, json);
     } catch(e) {
@@ -348,16 +400,9 @@ Format JSON CHÍNH XÁC như sau (không có gì khác ngoài JSON):
     const el = document.getElementById('listeningContent');
     el.innerHTML = `<div style="text-align:center;padding:30px"><div style="font-size:30px;margin-bottom:8px">⏳</div>AI đang tạo đoạn hội thoại...</div>`;
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:800,
-          messages:[{role:'user',content:`Tạo 1 đoạn hội thoại TOEIC Part 3 (2 người, 4-6 dòng, chủ đề công sở). Format JSON:
-{"dialogue":[{"speaker":"Man","text":"Hello, I wanted to ask about the meeting schedule."},{"speaker":"Woman","text":"The meeting has been moved to Thursday at 2 PM."}],"questions":[{"q":"What are they discussing?","opts":["A. A meeting time","B. A job application","C. A product order","D. A travel plan"],"ans":"A","exp":"Giải thích"},{"q":"When is the meeting?","opts":["A. Monday","B. Tuesday","C. Wednesday","D. Thursday"],"ans":"D","exp":"Giải thích"}],"tip":"Mẹo nghe: chú ý từ khóa về thời gian và địa điểm"}`}]
-        })
-      });
-      const data = await response.json();
-      const json = JSON.parse(data.content?.[0]?.text.replace(/```json|```/g,'').trim());
+      const _aiText_listening = await callAI('Bạn là AI tạo bài tập TOEIC. Chỉ trả về JSON, không có gì khác.', [{role:'user',content:`Tạo 1 đoạn hội thoại TOEIC Part 3 (2 người, 4-6 dòng, chủ đề công sở). Format JSON:
+{"dialogue":[{"speaker":"Man","text":"Hello, I wanted to ask about the meeting schedule."},{"speaker":"Woman","text":"The meeting has been moved to Thursday at 2 PM."}],"questions":[{"q":"What are they discussing?","opts":["A. A meeting time","B. A job application","C. A product order","D. A travel plan"],"ans":"A","exp":"Giải thích"},{"q":"When is the meeting?","opts":["A. Monday","B. Tuesday","C. Wednesday","D. Thursday"],"ans":"D","exp":"Giải thích"}],"tip":"Mẹo nghe: chú ý từ khóa về thời gian và địa điểm"}`}]);
+      const json = JSON.parse(_aiText_listening.replace(/```json|```/g,'').trim());
       this._renderListening(el, json);
     } catch(e) {
       el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ Lỗi: ${e.message}</div>`;
@@ -403,16 +448,9 @@ Format JSON CHÍNH XÁC như sau (không có gì khác ngoài JSON):
     el.innerHTML = `<div style="text-align:center;padding:30px"><div style="font-size:30px">⏳</div>AI đang tạo bài luyện nói...</div>`;
     try {
       const p = this._progressData || {};
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:600,
-          messages:[{role:'user',content:`Tạo bài luyện nói tiếng Anh TOEIC. Format JSON:
-{"topic":"Introducing yourself in a business meeting","sentences":[{"en":"Good morning, I am delighted to meet you all today.","vi":"Chào buổi sáng, tôi rất vui được gặp tất cả mọi người hôm nay.","tip":"Nhấn vào 'delighted' và 'today'"},{"en":"My name is David and I work in the marketing department.","vi":"Tên tôi là David và tôi làm việc ở phòng marketing.","tip":"Nói rõ từng từ, đừng nói nhanh"}],"vocab":[{"word":"delighted","ipa":"/dɪˈlaɪtɪd/","meaning":"vui mừng"}],"exercise":"Hãy giới thiệu bản thân bạn trong 30 giây bằng tiếng Anh, đề cập tên, công việc và một điều bạn đang học."}`}]
-        })
-      });
-      const data = await response.json();
-      const json = JSON.parse(data.content?.[0]?.text.replace(/```json|```/g,'').trim());
+      const _aiText_speaking = await callAI('Bạn là AI tạo bài tập TOEIC. Chỉ trả về JSON, không có gì khác.', [{role:'user',content:`Tạo bài luyện nói tiếng Anh TOEIC. Format JSON:
+{"topic":"Introducing yourself in a business meeting","sentences":[{"en":"Good morning, I am delighted to meet you all today.","vi":"Chào buổi sáng, tôi rất vui được gặp tất cả mọi người hôm nay.","tip":"Nhấn vào 'delighted' và 'today'"},{"en":"My name is David and I work in the marketing department.","vi":"Tên tôi là David và tôi làm việc ở phòng marketing.","tip":"Nói rõ từng từ, đừng nói nhanh"}],"vocab":[{"word":"delighted","ipa":"/dɪˈlaɪtɪd/","meaning":"vui mừng"}],"exercise":"Hãy giới thiệu bản thân bạn trong 30 giây bằng tiếng Anh, đề cập tên, công việc và một điều bạn đang học."}`}]);
+      const json = JSON.parse(_aiText_speaking.replace(/```json|```/g,'').trim());
       this._renderSpeaking(el, json);
     } catch(e) {
       el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ Lỗi: ${e.message}</div>`;
