@@ -446,9 +446,12 @@ export class WordLabPage {
     const best = parseInt(localStorage.getItem('sh_solo_best')||0);
     if (this._game.score > best) localStorage.setItem('sh_solo_best', this._game.score);
 
-    document.getElementById('sgScore').textContent = this._game.score;
-    document.getElementById('sgStreak').textContent = this._game.streak;
-    document.getElementById('sgBest').textContent = Math.max(best, this._game.score);
+    const _sgScore = document.getElementById('sgScore');
+    const _sgStreak = document.getElementById('sgStreak');
+    const _sgBest = document.getElementById('sgBest');
+    if (_sgScore) _sgScore.textContent = this._game.score;
+    if (_sgStreak) _sgStreak.textContent = this._game.streak;
+    if (_sgBest) _sgBest.textContent = Math.max(best, this._game.score);
 
     setTimeout(()=>this.sgNext(), ok?800:1200);
   }

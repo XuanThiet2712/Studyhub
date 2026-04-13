@@ -1,11 +1,15 @@
 // ── AI Conversation Page — Giao tiếp thực tế cùng Gemini ──
+// ★ THAY API KEY TẠI ĐÂY nếu bị lỗi quota/429
+// Lấy FREE tại: https://aistudio.google.com → Get API Key → Create API key
 const GEMINI_API_KEY = 'AIzaSyAdmzk-udHyq9z4ynlJqPEK70tcEi_16Nk';
 
 const _AI_MODELS = [
+  { api: 'v1beta', model: 'gemini-2.5-flash-preview-04-17' },
+  { api: 'v1beta', model: 'gemini-2.5-flash' },
   { api: 'v1beta', model: 'gemini-2.0-flash' },
   { api: 'v1beta', model: 'gemini-2.0-flash-lite' },
-  { api: 'v1',     model: 'gemini-1.5-flash' },
-  { api: 'v1',     model: 'gemini-1.5-flash-8b' },
+  { api: 'v1beta', model: 'gemini-1.5-flash' },
+  { api: 'v1beta', model: 'gemini-1.5-flash-8b' },
 ];
 
 async function callGemini(systemPrompt, messages) {
@@ -26,13 +30,21 @@ async function callGemini(systemPrompt, messages) {
       const data = await res.json();
       if (!res.ok) {
         const msg = data?.error?.message || `HTTP ${res.status}`;
-        if (res.status===429||res.status===404||msg.includes('quota')) { lastErr=new Error(msg); continue; }
+        if (res.status===429||res.status===404||msg.includes('quota')||msg.includes('not found')||msg.includes('not supported')) {
+          lastErr=new Error(msg);
+          if (res.status===429) await new Promise(r=>setTimeout(r,600));
+          continue;
+        }
         throw new Error(msg);
       }
+      console.log(`✅ AI: ${model}`);
       return data.candidates?.[0]?.content?.parts?.[0]?.text || '(Không có phản hồi)';
-    } catch(e) { lastErr=e; if (!e.message.includes('quota')&&!e.message.includes('429')) throw e; }
+    } catch(e) {
+      lastErr=e;
+      if (!e.message.includes('quota')&&!e.message.includes('429')&&!e.message.includes('not found')&&!e.message.includes('not supported')) throw e;
+    }
   }
-  throw lastErr || new Error('Không kết nối được AI');
+  throw new Error('⚠️ API Gemini hết quota hoặc key không hợp lệ.\nLấy key mới: https://aistudio.google.com → Get API Key\nThay vào GEMINI_API_KEY trong ConversationPage.js');
 }
 
 const SCENARIOS = [
