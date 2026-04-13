@@ -2,7 +2,7 @@ import { Toast } from '../components/index.js';
 
 // ★ THAY API KEY GEMINI TẠI ĐÂY nếu bị lỗi quota/429
 // Lấy FREE tại: https://aistudio.google.com → Get API Key → Create API key
-const GEMINI_API_KEY = 'AIzaSyAdmzk-udHyq9z4ynlJqPEK70tcEi_16Nk';
+const GEMINI_API_KEY = 'AIzaSyAavLnQP6I1FcaGX9vJS-MlYQ0RxRyaJ-M';
 
 const _GEMINI_MODELS = [
   { api: 'v1beta', model: 'gemini-2.5-flash-preview-04-17' },

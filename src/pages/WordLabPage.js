@@ -2,7 +2,7 @@ import { Toast } from '../components/index.js';
 
 // ★ THAY API KEY GEMINI TẠI ĐÂY nếu bị lỗi quota/429
 // Lấy FREE tại: https://aistudio.google.com → Get API Key → Create API key
-const _GEMINI_KEY = 'AIzaSyAdmzk-udHyq9z4ynlJqPEK70tcEi_16Nk';
+const _GEMINI_KEY = 'AIzaSyAavLnQP6I1FcaGX9vJS-MlYQ0RxRyaJ-M';
 
 const _GEMINI_MODELS = [
   { api: 'v1beta', model: 'gemini-2.5-flash-preview-04-17' },
@@ -152,7 +152,7 @@ export class WordLabPage {
           <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--shadow-sm)">
             <div style="font-size:11px;font-family:var(--mono);color:${sec.col};letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;font-weight:700">${sec.title}</div>
             ${sec.items.map(([p,m,e])=>`
-            <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px" onclick="document.getElementById('anatInput').value='${e.split(',')[0]}';wlPage.sw('anatomy',document.querySelector('.tab'));wlPage.analyzeAI();" style="cursor:pointer">
+            <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer" onclick="document.getElementById('anatInput').value='${e.split(',')[0]}';wlPage.sw('anatomy',document.querySelector('.tab'));wlPage.analyzeAI();">
               <div style="font-family:var(--mono);color:${sec.col};min-width:70px;font-weight:600">${p}</div>
               <div><div style="color:var(--text)">${m}</div><div style="font-size:10px;color:var(--muted2);margin-top:2px">${e}</div></div>
             </div>`).join('')}
@@ -210,12 +210,38 @@ export class WordLabPage {
 
     try {
       const text = await _callGemini(
-        'Bạn là AI phân tích từ vựng tiếng Anh. Chỉ trả về JSON, không có gì khác ngoài JSON.',
-        `Phân tích từ tiếng Anh "${word}" theo format JSON sau (chỉ trả về JSON, không có gì khác):\n{"word":"${word}","ipa":"/phiên âm IPA/","meaning":"nghĩa tiếng Việt chính","parts":[{"part":"tiền tố/gốc/hậu tố","type":"prefix|root|suffix","meaning":"nghĩa của phần này","color":"#ef4444 cho prefix, #3b82f6 cho root, #22c55e cho suffix","examples":["ví dụ1","ví dụ2","ví dụ3"]}],"family":["từ cùng gốc 1","từ cùng gốc 2","từ cùng gốc 3","từ cùng gốc 4"],"toeicExample":"1 câu ví dụ TOEIC thực tế","collocations":["collocation phổ biến 1","collocation 2","collocation 3"],"level":"basic|intermediate|advanced","tip":"mẹo ghi nhớ từ này"}`
+        'Bạn là AI phân tích từ vựng tiếng Anh chuyên sâu. Hãy trả lời bằng tiếng Việt, trình bày rõ ràng.',
+        `Phân tích từ tiếng Anh: "${word}"
+
+Hãy phân tích theo các mục sau (dùng đúng format này):
+IPA: /phiên âm/
+NGHĨA: nghĩa tiếng Việt chính
+LEVEL: basic | intermediate | advanced
+
+CẤU TẠO TỪ:
+- [tiền tố/gốc/hậu tố]: nghĩa phần này → ví dụ: un-, re-, -tion, -ly
+
+GIA ĐÌNH TỪ: word1, word2, word3, word4
+
+COLLOCATIONS: collocation1 | collocation2 | collocation3
+
+VÍ DỤ TOEIC: 1 câu ví dụ thực tế dùng từ này
+
+MẸO NHỚ: mẹo ghi nhớ từ dễ nhất`
       );
-      const json = JSON.parse(text.replace(/```json|```/g,'').trim());
-      this._curWord = json;
-      this.renderAIAnatomy(json);
+      let parsed = null;
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      } catch(_) {}
+
+      if (parsed && parsed.meaning) {
+        this._curWord = parsed;
+        this.renderAIAnatomy(parsed);
+      } else {
+        this._curWord = { word, _rawText: text };
+        this.renderAIText(word, text);
+      }
       this._initWordChat(word);
     } catch(e) {
       el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red)">❌ Lỗi phân tích: ${e.message}<br><button class="btn btn-ghost btn-sm" onclick="wlPage.analyzeAI()" style="margin-top:10px">Thử lại</button></div>`;
@@ -275,6 +301,128 @@ export class WordLabPage {
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('wordChat').style.display='block'" class="btn btn-ghost btn-sm">💬 Hỏi AI thêm</button>
         <button onclick="wlPage._saveToVocab('${d.word}','${d.meaning.replace(/'/g,"\\'")}','${d.ipa||''}')" class="btn btn-primary btn-sm">💾 Lưu vào từ vựng</button>
+      </div>
+    </div>`;
+  }
+
+  // FIX: Tách HTML thành biến riêng thay vì lồng template literal
+  renderAIText(word, text) {
+    const el = document.getElementById('anatResult');
+
+    const get = (label) => {
+      const re = new RegExp(label + '[:\\s]+([^\\n]+)', 'i');
+      return text.match(re)?.[1]?.trim() || '';
+    };
+    const ipa   = get('IPA');
+    const nghia = get('NGHĨA');
+    const level = get('LEVEL') || 'intermediate';
+    const meo   = get('MẸO NHỚ');
+    const vidu  = get('VÍ DỤ TOEIC');
+
+    const familyMatch = text.match(/GIA ĐÌNH TỪ[:\s]+([^\n]+)/i);
+    const family = familyMatch ? familyMatch[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    const colMatch = text.match(/COLLOCATIONS[:\s]+([^\n]+)/i);
+    const collocs = colMatch ? colMatch[1].split('|').map(s => s.trim()).filter(Boolean) : [];
+
+    const parts = [];
+    const partsSection = text.match(/CẤU TẠO TỪ[:\s\n]+([\s\S]*?)(?=\n[A-ZĐÀÁÂÃ]|$)/i);
+    if (partsSection) {
+      const lines = partsSection[1].split('\n').filter(l => l.trim().startsWith('-'));
+      lines.forEach((line, i) => {
+        const m = line.match(/-\s*\[?([^\]:\n]+)\]?:?\s*(.+)/);
+        if (m) {
+          const colors = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#8b5cf6'];
+          parts.push({ part: m[1].trim(), meaning: m[2].trim(), color: colors[i % colors.length], type: 'part' });
+        }
+      });
+    }
+
+    const levelColor = level.includes('basic') ? 'var(--green)' : level.includes('advanced') ? 'var(--red)' : 'var(--orange)';
+    const levelBg    = level.includes('basic') ? '#f0fdf4'      : level.includes('advanced') ? '#fef2f2'    : '#fff7ed';
+
+    // Build HTML sections as separate variables to avoid nested template literal issues
+    const partsHTML = parts.length
+      ? `<div style="display:flex;justify-content:center;align-items:stretch;gap:4px;flex-wrap:wrap;margin-bottom:18px">
+          ${parts.map((p, i) =>
+            `${i > 0 ? '<div style="font-size:22px;color:var(--muted);align-self:center;margin:0 6px">+</div>' : ''}
+            <div style="background:${p.color}12;border:2px solid ${p.color}30;border-radius:var(--r-lg);padding:12px 16px;min-width:85px;text-align:center">
+              <div style="font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:700;color:${p.color}">${p.part}</div>
+              <div style="font-size:9px;font-family:var(--mono);color:${p.color};text-transform:uppercase;margin-top:2px">${p.type}</div>
+              <div style="font-size:11px;font-weight:500;margin-top:4px">${p.meaning}</div>
+            </div>`
+          ).join('')}
+        </div>`
+      : '';
+
+    const familyHTML = family.length
+      ? `<div class="card">
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">👨‍👩‍👧 GIA ĐÌNH TỪ</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${family.map(w =>
+              `<span onclick="document.getElementById('anatInput').value='${w}';wlPage.analyzeAI()"
+                style="padding:4px 12px;border:1px solid var(--border2);border-radius:99px;font-size:12px;cursor:pointer;transition:all .15s"
+                onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+                onmouseout="this.style.borderColor='var(--border2)';this.style.color=''">${w}</span>`
+            ).join('')}
+          </div>
+        </div>`
+      : '';
+
+    const collocsHTML = collocs.length
+      ? `<div class="card">
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">🔗 COLLOCATIONS</div>
+          ${collocs.map(c =>
+            `<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px">
+              <span style="color:var(--blue)">•</span> ${c}
+              <button onclick="wlPage._speak('${c}',0.9)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);margin-left:auto">🔊</button>
+            </div>`
+          ).join('')}
+        </div>`
+      : '';
+
+    const viduSafe  = (vidu  || '').replace(/'/g, '\\x27');
+    const nghiaSafe = (nghia || word).replace(/'/g, '\\x27');
+
+    const viduHTML = vidu
+      ? `<div style="background:var(--purple-l);border-left:3px solid var(--purple);border-radius:0 var(--r-md) var(--r-md) 0;padding:12px 16px;margin-bottom:12px;font-size:13px;color:var(--muted);font-style:italic">
+          📋 "${vidu}" <button onclick="wlPage._speak('${viduSafe}',0.85)" style="background:none;border:none;cursor:pointer">🔊</button>
+        </div>`
+      : '';
+
+    const meoHTML = meo
+      ? `<div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fcd34d;border-radius:var(--r-lg);padding:12px 16px;margin-bottom:14px;font-size:13px">
+          💡 <strong>Mẹo nhớ:</strong> ${meo}
+        </div>`
+      : '';
+
+    el.innerHTML = `
+    <div>
+      <div class="card" style="text-align:center;padding:28px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">
+          <div style="font-family:'Lora',serif;font-style:italic;font-size:38px;font-weight:700">${word}</div>
+          <span style="padding:3px 10px;border-radius:99px;font-size:11px;background:${levelBg};color:${levelColor};font-family:var(--mono)">${level}</span>
+        </div>
+        ${ipa   ? `<div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">${ipa}</div>`   : ''}
+        ${nghia ? `<div style="font-size:16px;color:var(--muted);margin-bottom:16px">🇻🇳 ${nghia}</div>` : ''}
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px">
+          <button onclick="wlPage._speak('${word}',0.8)" style="background:var(--blue-l);border:1px solid rgba(59,130,246,.2);color:var(--blue);padding:5px 14px;border-radius:99px;font-size:12px;cursor:pointer">🔊 Chậm</button>
+          <button onclick="wlPage._speak('${word}',1.0)" style="background:#f0fdf4;border:1px solid rgba(34,197,94,.2);color:var(--green);padding:5px 14px;border-radius:99px;font-size:12px;cursor:pointer">🔊 Chuẩn</button>
+        </div>
+        ${partsHTML}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        ${familyHTML}
+        ${collocsHTML}
+      </div>
+
+      ${viduHTML}
+      ${meoHTML}
+
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('wordChat').style.display='block'" class="btn btn-ghost btn-sm">💬 Hỏi AI thêm</button>
+        <button onclick="wlPage._saveToVocab('${word}','${nghiaSafe}','${ipa}')" class="btn btn-primary btn-sm">💾 Lưu vào từ vựng</button>
       </div>
     </div>`;
   }
