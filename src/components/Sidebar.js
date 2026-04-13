@@ -54,6 +54,7 @@ export class Sidebar {
       { icon:'🎮', label:'Word Battle',           route:'/game',         key:'game',        badge: () => 'LIVE', bClass:'hot' },
       { section: 'AI & Công cụ' },
       { icon:'🤖', label:'AI Tutor',             route:'/ai-tutor',     key:'ai-tutor',    badge: () => 'AI', bClass:'new' },
+      { icon:'🗣️', label:'Giao tiếp AI',          route:'/conversation', key:'conversation', badge: () => 'MỚI', bClass:'new' },
       { icon:'📝', label:'Ghi chú',              route:'/notes',        key:'notes' },
       { icon:'⏱️', label:'Pomodoro',              route:'/pomodoro',     key:'pomodoro' },
     ];

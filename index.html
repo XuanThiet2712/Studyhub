@@ -52,6 +52,9 @@
   <button class="mob-nav-item" onclick="app?.router?.navigate('/ai-tutor')" data-route="/ai-tutor">
     <span class="icon">🤖</span><span>AI Tutor</span>
   </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/conversation')" data-route="/conversation">
+    <span class="icon">🗣️</span><span>Giao tiếp</span>
+  </button>
   <button class="mob-nav-item" onclick="app?.router?.navigate('/game')" data-route="/game">
     <span class="icon">⚔️</span><span>Game</span>
   </button>
@@ -247,6 +250,16 @@ async function boot() {
     showMobileUI(store.get('currentUser'));
     const page = new AITutorPage(db, store, bus);
     page.render();
+  });
+
+  router.register('/conversation', () => {
+    buildShell();
+    showMobileUI(store.get('currentUser'));
+    import('./src/pages/ConversationPage.js').then(mod => {
+      const page = new mod.ConversationPage(db, store, bus);
+      page.render();
+      window.convPage = page;
+    });
   });
 
   let notifSystem = null;

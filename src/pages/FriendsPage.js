@@ -16,7 +16,7 @@ export class FriendsPage {
       </div>
 
       <!-- NOTIFICATION BELL -->
-      <div id="friendNotifs" style="display:none;background:var(--orange-l);border:1px solid var(--orange);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div id="friendNotifs" style="display:none;background:var(--orange-l);border:1px solid var(--orange);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:16px;align-items:center;gap:10px">
         <span style="font-size:20px">🔔</span>
         <span id="friendNotifText" style="font-size:13px;font-weight:500;color:var(--orange)"></span>
       </div>
@@ -251,14 +251,26 @@ export class FriendsPage {
     const ch = this.db.client.channel(`notify:${user.id}`);
     ch.on('broadcast', { event: 'friend_request' }, ({ payload }) => {
       Toast.info(`👋 @${payload.from} muốn kết bạn!`);
+      const banner = document.getElementById('friendNotifs');
+      const bannerText = document.getElementById('friendNotifText');
+      if (banner && bannerText) {
+        bannerText.textContent = `👋 @${payload.from} vừa gửi lời mời kết bạn! Xem tab "Lời mời".`;
+        banner.style.display = 'flex';
+        setTimeout(() => { banner.style.display = 'none'; }, 8000);
+      }
       this.loadRequests();
     });
     ch.on('broadcast', { event: 'challenge' }, ({ payload }) => {
       this._pendingChallenge = payload;
-      document.getElementById('challengeModalBody').textContent = payload.message || `${payload.from} thách bạn thi đấu!`;
-      document.getElementById('challengeModal').classList.add('open');
+      const modalBody = document.getElementById('challengeModalBody');
+      const modal = document.getElementById('challengeModal');
+      if (modalBody) modalBody.textContent = payload.message || `${payload.from} thách bạn thi đấu từ vựng!`;
+      if (modal) modal.classList.add('open');
+      Toast.info(`⚔️ ${payload.from} vừa thách bạn thi đấu!`);
     });
-    ch.subscribe();
+    ch.subscribe((status) => {
+      if (status === 'SUBSCRIBED') console.log('✅ Notification channel subscribed');
+    });
     this._notifCh = ch;
   }
 

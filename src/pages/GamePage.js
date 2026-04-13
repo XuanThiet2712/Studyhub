@@ -262,9 +262,19 @@ export class GamePage {
   }
 
   _subscribeRoom(roomId) {
-    if (this._roomSub) this._roomSub.unsubscribe();
+    if (this._roomSub) { try { this._roomSub.unsubscribe(); } catch(e){} }
     this._roomSub = this.realtime.subscribeToRoom(roomId, async (payload) => {
       if (payload.eventType === 'INSERT') this._refreshWaitingPlayers();
+      if (payload.eventType === 'DELETE') {
+        // A player left - refresh or check if room should close
+        await this._refreshWaitingPlayers();
+        // If waiting and all players gone, go back to lobby
+        const waiting = document.getElementById('gameWaiting');
+        if (waiting && waiting.style.display !== 'none') {
+          const remaining = await this.db.select('game_players', { eq:{room_id:roomId} }).catch(()=>[]);
+          if (!remaining?.length) { Toast.info('Phòng đã bị đóng.'); this.backToLobby(); }
+        }
+      }
       if (payload.new?.score !== undefined) this._updateOpponentScore(payload.new);
     });
     // Also listen for room status changes
@@ -274,6 +284,11 @@ export class GamePage {
         if (payload.new?.status === 'playing') this._showArena();
         if (payload.new?.status === 'finished') this._showResults();
       }
+    );
+    // Listen for room deletion
+    this.db.subscribe(`room-delete-${roomId}`,
+      { event:'DELETE', schema:'public', table:'game_rooms', filter:`id=eq.${roomId}` },
+      () => { Toast.info('Phòng đã bị xóa.'); this.backToLobby(); }
     );
   }
 
@@ -428,10 +443,26 @@ export class GamePage {
     setTimeout(()=>this._showQuestion(), 1200);
   }
 
-  _updateOpponentScore(playerData) {
+  async _updateOpponentScore(playerData) {
     const el = document.getElementById('opponentScores');
-    if (!el) return;
-    // Will be updated with player info
+    if (!el || !this._room) return;
+    try {
+      const players = await this.db.select('game_players', { eq:{ room_id: this._room.id } });
+      const me = this.store.get('currentUser');
+      const opponents = players.filter(p => p.user_id !== me?.id);
+      if (!opponents.length) return;
+      const uids = opponents.map(p => p.user_id);
+      const profiles = await this.db.select('profiles', { select:'id,display_name,avatar_id', in:{id:uids} });
+      const pMap = Object.fromEntries(profiles.map(p=>[p.id,p]));
+      el.innerHTML = opponents.map(p => {
+        const pr = pMap[p.user_id] || {};
+        return `<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border-radius:var(--r-md);padding:8px 12px">
+          <img src="${User.avatarUrl(pr.avatar_id||1)}" style="width:28px;height:28px;border-radius:50%">
+          <span style="font-size:12px;font-weight:500">${pr.display_name||'Đối thủ'}</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red);margin-left:auto">${p.score||0} pts</span>
+        </div>`;
+      }).join('');
+    } catch(e) {}
   }
 
   async _endGame() {
@@ -488,7 +519,28 @@ export class GamePage {
     navigator.clipboard.writeText(code).then(()=>Toast.ok('Đã sao chép mã phòng!'));
   }
 
-  leaveRoom() { this._room=null; this.backToLobby(); }
+  async leaveRoom() {
+    if (this._room) {
+      const user = this.store.get('currentUser');
+      try {
+        // Remove player from room
+        const players = await this.db.select('game_players', { eq:{room_id:this._room.id, user_id:user.id} });
+        if (players?.length) await this.db.client.from('game_players').delete().eq('id', players[0].id);
+        // Check remaining players - if 0 left, delete room
+        const remaining = await this.db.select('game_players', { eq:{room_id:this._room.id} });
+        if (!remaining?.length) {
+          await this.db.client.from('game_rooms').delete().eq('id', this._room.id);
+        } else if (this._room.hostId === user.id && remaining.length > 0) {
+          // Transfer host to next player
+          await this.db.update('game_rooms', this._room.id, { host_id: remaining[0].user_id });
+        }
+      } catch(e) { console.error('leaveRoom error:', e); }
+      if (this._roomSub) { try { this._roomSub.unsubscribe(); } catch(e){} this._roomSub = null; }
+    }
+    this._room = null;
+    this._player = null;
+    this.backToLobby();
+  }
 
   backToLobby() {
     ['gameWaiting','gameArena','gameResults'].forEach(id=>document.getElementById(id).style.display='none');
@@ -500,6 +552,12 @@ export class GamePage {
 
   async loadRooms() {
     try {
+      // Cleanup empty/stale waiting rooms (older than 2 hours)
+      const twoHoursAgo = new Date(Date.now() - 2*60*60*1000).toISOString();
+      try {
+        await this.db.client.from('game_rooms').delete()
+          .eq('status','waiting').lt('created_at', twoHoursAgo);
+      } catch(_) {}
       const rooms = await this.db.select('game_rooms',{ eq:{status:'waiting'}, order:{col:'created_at',asc:false}, limit:10 });
       const el    = document.getElementById('roomList');
       if (!el) return;

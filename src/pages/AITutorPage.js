@@ -1,66 +1,50 @@
 import { Toast } from '../components/index.js';
 
-// ★ ĐIỀN GEMINI API KEY VÀO ĐÂY (FREE hoàn toàn)
-// Lấy tại: https://aistudio.google.com → Get API Key → Create API key
-const GEMINI_API_KEY = 'AIzaSyDNMG_rzkHwSBfGlRYE2hojqCvJTt0uQh4';
+// ★ THAY API KEY GEMINI TẠI ĐÂY nếu bị lỗi quota/429
+// Lấy FREE tại: https://aistudio.google.com → Get API Key → Create API key
+const GEMINI_API_KEY = 'AIzaSyAdmzk-udHyq9z4ynlJqPEK70tcEi_16Nk';
 
-// Model + API version — tự động fallback nếu lỗi
-const _AI_CANDIDATES = [
+const _GEMINI_MODELS = [
+  { api: 'v1beta', model: 'gemini-2.5-flash-preview-04-17' },
+  { api: 'v1beta', model: 'gemini-2.5-flash' },
   { api: 'v1beta', model: 'gemini-2.0-flash' },
   { api: 'v1beta', model: 'gemini-2.0-flash-lite' },
-  { api: 'v1',     model: 'gemini-1.5-flash' },
-  { api: 'v1',     model: 'gemini-1.5-flash-8b' },
-  { api: 'v1',     model: 'gemini-1.5-pro' },
+  { api: 'v1beta', model: 'gemini-1.5-flash' },
+  { api: 'v1beta', model: 'gemini-1.5-flash-8b' },
 ];
 
 async function callAI(systemPrompt, messages) {
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_KEY_HERE') {
-    throw new Error('Chưa điền Gemini API key! Mở AITutorPage.js và điền key vào dòng đầu.');
-  }
-  // Nhét system prompt vào message đầu (tương thích mọi model)
   const contents = [
     { role: 'user',  parts: [{ text: systemPrompt }] },
     { role: 'model', parts: [{ text: 'Đã hiểu. Tôi sẽ hỗ trợ bạn theo đúng vai trò.' }] },
-    ...messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }))
+    ...messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
   ];
-  const body = {
-    contents,
-    generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
-  };
   let lastErr;
-  for (const { api, model } of _AI_CANDIDATES) {
+  for (const { api, model } of _GEMINI_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1000, temperature: 0.7 } })
       });
       const data = await res.json();
       if (!res.ok) {
         const msg = data?.error?.message || `HTTP ${res.status}`;
-        const shouldFallback = res.status === 429
-          || res.status === 404
-          || msg.includes('quota')
-          || msg.includes('RESOURCE_EXHAUSTED')
-          || msg.includes('not found')
-          || msg.includes('not supported');
-        if (shouldFallback) { lastErr = new Error(msg); continue; }
+        if (res.status === 429 || res.status === 404 || msg.includes('quota') || msg.includes('not found') || msg.includes('not supported')) {
+          lastErr = new Error(msg);
+          if (res.status === 429) await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
         throw new Error(msg);
       }
-      console.log(`✅ AI dùng model: ${model}`);
+      console.log(`✅ AI: ${model}`);
       return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, không có phản hồi.';
     } catch(e) {
       lastErr = e;
-      const shouldFallback = e.message.includes('quota') || e.message.includes('RESOURCE_EXHAUSTED')
-        || e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('429');
-      if (!shouldFallback) throw e;
+      if (!e.message.includes('quota') && !e.message.includes('not found') && !e.message.includes('429') && !e.message.includes('not supported')) throw e;
     }
   }
-  throw lastErr || new Error('Không có model nào khả dụng. Kiểm tra API key tại aistudio.google.com');
+  throw new Error('⚠️ API Gemini hết quota hoặc key không hợp lệ.\nLấy key mới tại: https://aistudio.google.com → Get API Key\nSau đó thay vào dòng GEMINI_API_KEY trong AITutorPage.js');
 }
 
 export class AITutorPage {

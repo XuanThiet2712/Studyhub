@@ -1,5 +1,50 @@
 import { Toast } from '../components/index.js';
 
+// ★ THAY API KEY GEMINI TẠI ĐÂY nếu bị lỗi quota/429
+// Lấy FREE tại: https://aistudio.google.com → Get API Key → Create API key
+const _GEMINI_KEY = 'AIzaSyAdmzk-udHyq9z4ynlJqPEK70tcEi_16Nk';
+
+const _GEMINI_MODELS = [
+  { api: 'v1beta', model: 'gemini-2.5-flash-preview-04-17' },
+  { api: 'v1beta', model: 'gemini-2.5-flash' },
+  { api: 'v1beta', model: 'gemini-2.0-flash' },
+  { api: 'v1beta', model: 'gemini-2.0-flash-lite' },
+  { api: 'v1beta', model: 'gemini-1.5-flash' },
+  { api: 'v1beta', model: 'gemini-1.5-flash-8b' },
+];
+
+async function _callGemini(systemPrompt, userMessage) {
+  const contents = [
+    { role: 'user',  parts: [{ text: systemPrompt }] },
+    { role: 'model', parts: [{ text: 'Đã hiểu.' }] },
+    { role: 'user',  parts: [{ text: userMessage }] },
+  ];
+  let lastErr;
+  for (const { api, model } of _GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${_GEMINI_KEY}`;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1000, temperature: 0.7 } }) });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data?.error?.message || `HTTP ${res.status}`;
+        if (res.status === 429 || res.status === 404 || msg.includes('quota') || msg.includes('not found') || msg.includes('not supported')) {
+          lastErr = new Error(msg);
+          if (res.status === 429) await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
+        throw new Error(msg);
+      }
+      console.log(`✅ AI: ${model}`);
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } catch(e) {
+      lastErr = e;
+      if (!e.message.includes('quota') && !e.message.includes('not found') && !e.message.includes('429') && !e.message.includes('not supported')) throw e;
+    }
+  }
+  throw new Error('⚠️ API Gemini hết quota.\nLấy key mới tại: https://aistudio.google.com → Get API Key\nSau đó thay vào dòng _GEMINI_KEY trong WordLabPage.js');
+}
+
 export class WordLabPage {
   constructor(db, store, bus) {
     this.db=db; this.store=store; this.bus=bus;
@@ -164,16 +209,10 @@ export class WordLabPage {
     el.innerHTML = `<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🤖</div><div style="color:var(--muted)">AI đang phân tích từ "<strong>${word}</strong>"...</div></div>`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:1000,
-          messages:[{role:'user',content:`Phân tích từ tiếng Anh "${word}" theo format JSON sau (chỉ trả về JSON, không có gì khác):
-{"word":"${word}","ipa":"/phiên âm IPA/","meaning":"nghĩa tiếng Việt chính","parts":[{"part":"tiền tố/gốc/hậu tố","type":"prefix|root|suffix","meaning":"nghĩa của phần này","color":"#ef4444 cho prefix, #3b82f6 cho root, #22c55e cho suffix","examples":["ví dụ1","ví dụ2","ví dụ3"]}],"family":["từ cùng gốc 1","từ cùng gốc 2","từ cùng gốc 3","từ cùng gốc 4"],"toeicExample":"1 câu ví dụ TOEIC thực tế","collocations":["collocation phổ biến 1","collocation 2","collocation 3"],"level":"basic|intermediate|advanced","tip":"mẹo ghi nhớ từ này"}`}]
-        })
-      });
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '';
+      const text = await _callGemini(
+        'Bạn là AI phân tích từ vựng tiếng Anh. Chỉ trả về JSON, không có gì khác ngoài JSON.',
+        `Phân tích từ tiếng Anh "${word}" theo format JSON sau (chỉ trả về JSON, không có gì khác):\n{"word":"${word}","ipa":"/phiên âm IPA/","meaning":"nghĩa tiếng Việt chính","parts":[{"part":"tiền tố/gốc/hậu tố","type":"prefix|root|suffix","meaning":"nghĩa của phần này","color":"#ef4444 cho prefix, #3b82f6 cho root, #22c55e cho suffix","examples":["ví dụ1","ví dụ2","ví dụ3"]}],"family":["từ cùng gốc 1","từ cùng gốc 2","từ cùng gốc 3","từ cùng gốc 4"],"toeicExample":"1 câu ví dụ TOEIC thực tế","collocations":["collocation phổ biến 1","collocation 2","collocation 3"],"level":"basic|intermediate|advanced","tip":"mẹo ghi nhớ từ này"}`
+      );
       const json = JSON.parse(text.replace(/```json|```/g,'').trim());
       this._curWord = json;
       this.renderAIAnatomy(json);
@@ -264,16 +303,10 @@ export class WordLabPage {
     addMsg('user', text);
     addMsg('assistant', '⏳...');
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:400,
-          system:`Bạn là trợ lý phân tích từ vựng tiếng Anh TOEIC. Đang phân tích từ "${this._currentWordForChat}". Trả lời ngắn gọn bằng tiếng Việt, dùng emoji.`,
-          messages:[...this._wordChatMessages.slice(-6), {role:'user',content:text}]
-        })
-      });
-      const data = await response.json();
-      const reply = data.content?.[0]?.text || 'Lỗi';
+      const reply = await _callGemini(
+        `Bạn là trợ lý phân tích từ vựng tiếng Anh TOEIC. Đang phân tích từ "${this._currentWordForChat}". Trả lời ngắn gọn bằng tiếng Việt, dùng emoji.`,
+        [...this._wordChatMessages.slice(-6).map(m => m.role+': '+m.content), text].join('\n')
+      );
       el.lastChild?.remove();
       addMsg('assistant', reply);
       this._wordChatMessages.push({role:'user',content:text},{role:'assistant',content:reply});

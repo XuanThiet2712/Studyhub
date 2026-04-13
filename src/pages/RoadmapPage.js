@@ -228,42 +228,126 @@ export class RoadmapPage {
         <!-- LISTENING -->
         <div class="card">
           <div class="card-title" style="color:var(--green)">🎧 Luyện nghe <span class="badge badge-green" style="font-size:10px">TOEIC Part 1-4</span></div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px">
-            Nghe đoạn hội thoại liên quan đến chủ đề <strong>${d.theme}</strong>. Chú ý từ vựng key và ngữ cảnh sử dụng.
+          <div style="background:var(--green-l);border-radius:var(--r-lg);padding:14px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#16a34a;margin-bottom:8px">🎯 Bài tập luyện nghe — Chủ đề: ${d.theme}</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.9">
+              <strong>Bước 1 · Part 1 (Ảnh mô tả):</strong> Nhìn ảnh văn phòng/công sở, đoán 4 câu mô tả, chọn câu đúng nhất.<br>
+              <strong>Bước 2 · Part 2 (Hỏi-đáp):</strong> Nghe câu hỏi → chọn câu trả lời A/B/C phù hợp nhất.<br>
+              <strong>Bước 3 · Part 3 (Hội thoại):</strong> Nghe đoạn hội thoại 3 người về <em>${d.theme.toLowerCase()}</em> → trả lời 3 câu hỏi.<br>
+              <strong>Bước 4 · Part 4 (Bài nói):</strong> Nghe thông báo/bài phát biểu liên quan chủ đề → trả lời 3 câu.
+            </div>
           </div>
-          <div style="background:var(--green-l);border-radius:var(--r-md);padding:12px;font-size:13px;margin-bottom:10px">
-            📌 <strong>Tip:</strong> Với Part 3-4, đọc câu hỏi TRƯỚC khi nghe. Nghe lần 1 để hiểu ý chính, lần 2 để tìm chi tiết.
+          <div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;margin-bottom:10px;border-left:3px solid var(--green)">
+            <strong>📌 Chiến lược thi:</strong><br>
+            • Đọc câu hỏi <strong>trước</strong> khi audio bắt đầu (dùng thời gian chuyển slide)<br>
+            • Part 1: chú ý <em>chủ ngữ + động từ</em> — tránh bẫy "trông giống nhưng sai"<br>
+            • Part 3-4: gạch chân từ khoá trong câu hỏi, scan đáp án song song khi nghe<br>
+            • Không hiểu → đoán ngay, KHÔNG bỏ trống, chuyển câu tiếp theo
           </div>
-          <button class="btn ${dp.listeningDone?'btn-success':'btn-ghost'} btn-sm" onclick="roadmapPage.markSection('listening')">
-            ${dp.listeningDone?'✅ Đã luyện nghe':'○ Đánh dấu hoàn thành'}
-          </button>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+            💬 <strong>Từ khoá cần nghe:</strong> ${d.vocab.slice(0,4).map(w=>`<span style="background:var(--green-l);padding:2px 7px;border-radius:99px;margin:2px;display:inline-block;font-family:var(--mono);font-size:11px">${w}</span>`).join('')}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="roadmapPage.speak('${d.vocab[0]||'meeting'} is scheduled for tomorrow morning.')">▶ Nghe câu mẫu</button>
+            <button class="btn ${dp.listeningDone?'btn-success':'btn-ghost'} btn-sm" onclick="roadmapPage.markSection('listening')">
+              ${dp.listeningDone?'✅ Đã luyện nghe':'○ Đánh dấu hoàn thành'}
+            </button>
+          </div>
         </div>
 
         <!-- READING -->
         <div class="card">
-          <div class="card-title" style="color:var(--orange)">📄 Đọc hiểu <span class="badge badge-orange" style="font-size:10px">TOEIC Part 6-7</span></div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px">
-            Đọc email/thông báo/quảng cáo về chủ đề <strong>${d.theme}</strong>. Chú ý từ khoá và suy luận từ ngữ cảnh.
+          <div class="card-title" style="color:var(--orange)">📄 Đọc hiểu <span class="badge badge-orange" style="font-size:10px">TOEIC Part 5-7</span></div>
+          <div style="background:var(--orange-l);border-radius:var(--r-lg);padding:14px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#c2410c;margin-bottom:8px">🎯 Bài tập đọc hiểu — Chủ đề: ${d.theme}</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.9">
+              <strong>Bước 1 · Part 5 (Điền từ):</strong> Hoàn thành câu bằng cách chọn từ đúng (danh từ/động từ/tính từ/trạng từ). Áp dụng ngữ pháp: <em>${d.grammar}</em><br>
+              <strong>Bước 2 · Part 6 (Điền đoạn):</strong> Đọc email/thư từ và chọn câu/từ phù hợp điền vào 4 chỗ trống.<br>
+              <strong>Bước 3 · Part 7 (Đọc bài):</strong> Đọc email, thông báo, quảng cáo về <em>${d.theme.toLowerCase()}</em> và trả lời câu hỏi.
+            </div>
           </div>
-          <div style="background:var(--orange-l);border-radius:var(--r-md);padding:12px;font-size:13px;margin-bottom:10px">
-            📌 <strong>Tip:</strong> Đọc câu hỏi trước, sau đó scan passage tìm từ khoá. Không cần đọc hết toàn bộ.
+          <div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;margin-bottom:12px;border-left:3px solid var(--orange)">
+            <strong>📌 Chiến lược thi:</strong><br>
+            • Part 5: 30 giây/câu — đọc đầu-cuối câu trước, xác định từ loại cần điền<br>
+            • Part 6: đọc toàn đoạn trước → hiểu context → mới chọn câu/từ điền<br>
+            • Part 7 Single: đọc câu hỏi → scan bài → locate đáp án (không đọc từ đầu đến cuối!)<br>
+            • Part 7 Multiple: đọc câu hỏi so sánh 2 bài → chỉ đọc phần liên quan
+          </div>
+          <div style="font-size:12px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">📝 MẪU CÂU PART 5 — Dùng ngữ pháp: ${d.grammar}</div>
+            <div style="font-size:12px;color:var(--text);font-style:italic">
+              "The ${d.vocab[0]||'manager'} was ___ by the board of directors." → <strong>approved / approving / approval / approvingly</strong>
+            </div>
           </div>
           <button class="btn ${dp.readingDone?'btn-success':'btn-ghost'} btn-sm" onclick="roadmapPage.markSection('reading')">
             ${dp.readingDone?'✅ Đã đọc hiểu':'○ Đánh dấu hoàn thành'}
           </button>
         </div>
 
+        <!-- WRITING -->
+        <div class="card">
+          <div class="card-title" style="color:var(--teal)">✍️ Luyện viết <span style="background:#ccfbf1;color:#0f766e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600">Email · Note · Report</span></div>
+          <div style="background:#f0fdfa;border-radius:var(--r-lg);padding:14px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#0f766e;margin-bottom:8px">🎯 Bài tập viết — Chủ đề: ${d.theme}</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.9">
+              <strong>Bài tập 1 · Viết email (10 phút):</strong><br>
+              Viết email ngắn (50-80 từ) liên quan đến <em>${d.theme.toLowerCase()}</em>. Sử dụng các từ: <em>${d.vocab.slice(0,3).join(', ')}</em><br>
+              <strong>Bài tập 2 · Hoàn thành câu (5 phút):</strong><br>
+              Điền từ vựng hôm nay vào câu cho sẵn, sau đó dịch sang tiếng Anh.
+            </div>
+          </div>
+          <div style="border:1px dashed var(--teal);border-radius:var(--r-md);padding:12px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">📝 ĐỀ BÀI HÔM NAY:</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.8">
+              Viết email gửi cho đồng nghiệp thông báo về <strong>${d.title.toLowerCase()}</strong>.<br>
+              • Mở đầu: chào hỏi, nêu lý do viết<br>
+              • Thân bài: thông tin chính về ${d.theme.toLowerCase()}, dùng từ <em>${d.vocab[0]||'meeting'}</em> và <em>${d.vocab[1]||'schedule'}</em><br>
+              • Kết thúc: lời kêu gọi hành động (CTA) + ký tên
+            </div>
+          </div>
+          <div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;margin-bottom:10px;border-left:3px solid var(--teal)">
+            <strong>📌 Cấu trúc email chuẩn TOEIC:</strong><br>
+            <span style="font-family:var(--mono);font-size:11px">Subject: Re: [Chủ đề rõ ràng]<br>Dear [Name],<br>I am writing to inform you that...<br>Please do not hesitate to contact me.<br>Best regards, [Tên]</span>
+          </div>
+          <button class="btn ${dp.writingDone?'btn-success':'btn-ghost'} btn-sm" onclick="roadmapPage.markSection('writing')">
+            ${dp.writingDone?'✅ Đã luyện viết':'○ Đánh dấu hoàn thành'}
+          </button>
+        </div>
+
         <!-- SPEAKING -->
         <div class="card">
-          <div class="card-title" style="color:var(--pink)">🗣️ Luyện nói</div>
-          <div style="background:var(--pink-l);border-radius:var(--r-md);padding:12px;font-size:13px;margin-bottom:10px">
-            Chủ đề: Nói về <strong>${d.title}</strong> trong 1-2 phút. Sử dụng từ vựng đã học hôm nay.
+          <div class="card-title" style="color:var(--pink)">🗣️ Luyện nói <span style="background:#fce7f3;color:#be185d;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600">Shadow + Record</span></div>
+          <div style="background:var(--pink-l);border-radius:var(--r-lg);padding:14px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#be185d;margin-bottom:8px">🎯 Luyện nói chủ đề: ${d.title}</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.9">
+              <strong>Bước 1 · Shadowing (5 phút):</strong> Bấm nút nghe câu mẫu dưới đây → nhắc lại ngay, bắt chước ngữ điệu và phát âm<br>
+              <strong>Bước 2 · Tự nói (5 phút):</strong> Nói về <em>${d.theme.toLowerCase()}</em> trong 1-2 phút — dùng ít nhất 3 từ mới hôm nay<br>
+              <strong>Bước 3 · Role-play:</strong> Giả sử bạn đang trong cuộc hội thoại tại nơi làm việc về chủ đề này
+            </div>
           </div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">🎯 Focus: Dùng ${d.vocab.slice(0,3).join(', ')} trong câu nói của bạn</div>
-          <button class="btn btn-ghost btn-sm" onclick="roadmapPage.speak('${d.vocab[0]||''} is very important in ${d.theme.toLowerCase()}.')">▶ Nghe mẫu</button>
-          <button class="btn ${dp.speakingDone?'btn-success':'btn-ghost'} btn-sm" style="margin-left:6px" onclick="roadmapPage.markSection('speaking')">
-            ${dp.speakingDone?'✅ Đã luyện nói':'○ Đánh dấu hoàn thành'}
-          </button>
+          <div style="font-size:12px;margin-bottom:10px">
+            <div style="font-weight:600;margin-bottom:6px;color:var(--text)">🎤 Câu mẫu để shadowing:</div>
+            ${d.vocab.slice(0,3).map((w,i) => {
+              const sentences = [
+                `"I need to check the ${w} before the meeting starts."`,
+                `"Could you please handle the ${w} for me today?"`,
+                `"The ${w} has been approved by the manager."`
+              ];
+              return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+                <button onclick="roadmapPage.speak(${JSON.stringify(sentences[i]||sentences[0])})" style="background:var(--pink-l);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;flex-shrink:0">▶</button>
+                <span style="font-size:12px;font-style:italic;color:var(--text)">${sentences[i]||sentences[0]}</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;margin-bottom:10px;border-left:3px solid var(--pink)">
+            <strong>💡 Từ bắt buộc dùng:</strong> ${d.vocab.slice(0,3).map(w=>`<span style="background:var(--pink-l);padding:2px 7px;border-radius:99px;font-family:var(--mono);font-size:11px">${w}</span>`).join(' ')}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="roadmapPage.startSpeakingPractice('${d.title}', '${d.vocab.slice(0,3).join(',')}')">🎤 Bắt đầu luyện nói</button>
+            <button class="btn ${dp.speakingDone?'btn-success':'btn-ghost'} btn-sm" onclick="roadmapPage.markSection('speaking')">
+              ${dp.speakingDone?'✅ Đã luyện nói':'○ Đánh dấu hoàn thành'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -286,7 +370,7 @@ export class RoadmapPage {
           <div class="card-title">✅ Checklist ngày ${d.day}</div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-family:var(--mono)">${dp.progressPct}% hoàn thành</div>
           <div class="prog-track" style="margin-bottom:12px"><div class="prog-fill" style="width:${dp.progressPct}%;background:var(--green)"></div></div>
-          ${[['grammar','📐 Ngữ pháp'],['vocab','📖 Từ vựng'],['listening','🎧 Luyện nghe'],['reading','📄 Đọc hiểu'],['speaking','🗣️ Luyện nói']].map(([sec,label])=>`
+          ${[['grammar','📐 Ngữ pháp'],['vocab','📖 Từ vựng'],['listening','🎧 Luyện nghe'],['reading','📄 Đọc hiểu'],['writing','✍️ Luyện viết'],['speaking','🗣️ Luyện nói']].map(([sec,label])=>`
           <label style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px">
             <input type="checkbox" ${dp[sec+'Done']?'checked':''} onchange="roadmapPage.markSection('${sec}')">
             <span style="text-decoration:${dp[sec+'Done']?'line-through':''};color:${dp[sec+'Done']?'var(--muted)':'var(--text)'}">${label}</span>
@@ -390,6 +474,35 @@ export class RoadmapPage {
       <div class="modal-footer"><button class="btn btn-primary" onclick="this.closest('.overlay').remove()">Đóng</button></div>
     </div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+    document.body.appendChild(modal);
+  }
+
+  startSpeakingPractice(topic, vocabStr) {
+    const vocab = vocabStr.split(',');
+    const modal = document.createElement('div');
+    modal.className = 'overlay open';
+    modal.innerHTML = `<div class="modal" style="max-width:500px">
+      <div class="modal-title">🎤 Luyện nói — ${topic}</div>
+      <div style="background:var(--pink-l);border-radius:var(--r-md);padding:12px;margin-bottom:14px;font-size:13px">
+        <strong>Chủ đề:</strong> Nói về <em>${topic}</em> trong 1-2 phút<br>
+        <strong>Từ bắt buộc dùng:</strong> ${vocab.join(', ')}
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Gợi ý cấu trúc bài nói:</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.9;margin-bottom:14px">
+        1. <strong>Mở đầu:</strong> "Today, I'd like to talk about ${topic.toLowerCase()}..."<br>
+        2. <strong>Ý chính:</strong> Giải thích ${vocab[0]||'topic'} là gì, tầm quan trọng<br>
+        3. <strong>Ví dụ:</strong> "For example, in my workplace, we often use ${vocab[1]||vocab[0]}..."<br>
+        4. <strong>Kết luận:</strong> "In conclusion, ${vocab[2]||vocab[0]} plays a vital role in..."
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${vocab.map(w => `<button onclick="roadmapPage.speak('${w}')" style="background:var(--pink-l);border:1px solid var(--pink);border-radius:99px;padding:4px 10px;cursor:pointer;font-family:var(--mono);font-size:12px">▶ ${w}</button>`).join('')}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.overlay').remove()">Đóng</button>
+        <button class="btn btn-primary" onclick="roadmapPage.markSection('speaking');this.closest('.overlay').remove()">✅ Đánh dấu hoàn thành</button>
+      </div>
+    </div>`;
+    modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
     document.body.appendChild(modal);
   }
 
