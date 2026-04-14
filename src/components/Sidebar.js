@@ -48,6 +48,7 @@ export class Sidebar {
       { icon:'🔬', label:'Word Lab',             route:'/wordlab',      key:'wordlab',     badge: () => 'NEW', bClass:'new' },
       { icon:'🧠', label:'Đường cong lãng quên', route:'/forgetting',   key:'forgetting' },
       { section: 'Cộng đồng' },
+      { icon:'🌍', label:'StudyHub World',      route:'/world',        key:'world',       badge:()=>'GAME', bClass:'hot' },
       { icon:'💬', label:'Trò chuyện',           route:'/chat',         key:'chat',        badge: () => online ? `${online} online` : null, bClass:'hot' },
       { icon:'👥', label:'Bạn bè',               route:'/friends',      key:'friends',     badge: () => null },
       { icon:'🏆', label:'Bảng xếp hạng',        route:'/leaderboard',  key:'leaderboard' },

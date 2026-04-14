@@ -1,3 +1,4 @@
+import { aiService, showAPIKeyModal } from '../services/AIService.js';
 import { Toast } from '../components/index.js';
 import { Vocabulary } from '../models/index.js';
 

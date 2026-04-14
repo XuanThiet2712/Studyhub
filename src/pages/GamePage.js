@@ -554,10 +554,8 @@ export class GamePage {
     try {
       // Cleanup empty/stale waiting rooms (older than 2 hours)
       const twoHoursAgo = new Date(Date.now() - 2*60*60*1000).toISOString();
-      try {
-        await this.db.client.from('game_rooms').delete()
-          .eq('status','waiting').lt('created_at', twoHoursAgo);
-      } catch(_) {}
+      await this.db.client.from('game_rooms').delete()
+        .eq('status','waiting').lt('created_at', twoHoursAgo).catch(()=>{});
       const rooms = await this.db.select('game_rooms',{ eq:{status:'waiting'}, order:{col:'created_at',asc:false}, limit:10 });
       const el    = document.getElementById('roomList');
       if (!el) return;
