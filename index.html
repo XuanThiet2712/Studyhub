@@ -243,13 +243,11 @@ async function boot() {
   lazyRoute('/profile',    './src/pages/ProfilePage.js',    'ProfilePage', auth);
 
   router.register('/world', () => {
+    buildShell();
+    showMobileUI(store.get('currentUser'));
     const page = new WorldPage(db, store, bus);
-    // Full-screen — no sidebar for world
-    const appEl = document.getElementById('app');
-    appEl.innerHTML = '<div class="main" id="mainContent" style="margin-left:0;padding-top:0"></div>';
     page.render();
     window.worldPage = page;
-    // Clean up on navigate
     bus.once('route:change', () => { if(window.worldPage?.destroy) window.worldPage.destroy(); });
   });
 

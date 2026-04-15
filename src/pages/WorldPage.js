@@ -1,521 +1,414 @@
-/**
- * 🌍 StudyHub World — Thế giới học tập online
- * Game nông trại kết hợp học từ vựng:
- * - Di chuyển nhân vật bằng WASD / arrow keys
- * - Gặp NPC để nhận quest học tập
- * - Trồng "cây từ vựng" - ôn từ để cây lớn
- * - Gặp người chơi khác real-time
- * - Các khu vực: Library, Farm, Arena, Market, Café
- */
-import { aiService, showAPIKeyModal } from '../services/AIService.js';
 import { Toast } from '../components/index.js';
 
-// Map data
-const MAP_W = 40, MAP_H = 28, TILE = 32;
-const ZONES = {
-  library:  { x:2,  y:2,  w:8, h:6,  color:'#bfdbfe', label:'📚 Library',  desc:'Đọc và học từ vựng mới' },
-  farm:     { x:14, y:2,  w:10,h:8,  color:'#bbf7d0', label:'🌱 Word Farm', desc:'Trồng "cây từ vựng" bằng SRS' },
-  arena:    { x:28, y:2,  w:10,h:6,  color:'#fecdd3', label:'⚔️ Arena',    desc:'Thách đấu từ vựng với người khác' },
-  market:   { x:2,  y:14, w:8, h:8,  color:'#fef08a', label:'🏪 Market',   desc:'Đổi XP lấy power-up' },
-  cafe:     { x:14, y:14, w:8, h:8,  color:'#ddd6fe', label:'☕ AI Café',   desc:'Chat với AI Tutor' },
-  park:     { x:26, y:12, w:12,h:10, color:'#cffafe', label:'🌳 Park',      desc:'Nghỉ ngơi & gặp bạn bè' },
+const MAP_W=32, MAP_H=22, TILE=28;
+const ZONES={
+  library: {x:1,y:1,w:7,h:5,color:'#bfdbfe',label:'📚 Thư viện',desc:'Học từ vựng · Lộ trình'},
+  farm:    {x:12,y:1,w:8,h:6,color:'#bbf7d0',label:'🌱 Nông trại',desc:'Trồng từ vựng SRS'},
+  arena:   {x:24,y:1,w:7,h:5,color:'#fecdd3',label:'⚔️ Đấu trường',desc:'Word Battle · PvP'},
+  market:  {x:1,y:12,w:7,h:7,color:'#fef08a',label:'🏪 Cửa hàng',desc:'Đổi XP · Nâng cấp'},
+  cafe:    {x:12,y:11,w:7,h:7,color:'#ddd6fe',label:'☕ AI Café',desc:'Chat AI · Giao tiếp'},
+  park:    {x:23,y:10,w:8,h:9,color:'#cffafe',label:'🌳 Công viên',desc:'Nghỉ ngơi · Bạn bè'},
 };
-const NPCS = [
-  { id:'librarian', x:5,  y:5,  emoji:'👩‍🏫', name:'Cô Lan',    zone:'library', dialog:'Chào bạn! Hôm nay bạn muốn học từ nào?',     quest:'learn5' },
-  { id:'farmer',    x:18, y:6,  emoji:'👨‍🌾', name:'Chú Hùng',  zone:'farm',    dialog:'Cây từ vựng của bạn đã lớn chưa?',             quest:'review3' },
-  { id:'warrior',   x:32, y:5,  emoji:'⚔️', name:'Thầy Dũng',  zone:'arena',   dialog:'Sẵn sàng thách đấu chưa? +30 XP nếu thắng!',  quest:'battle' },
-  { id:'merchant',  x:5,  y:18, emoji:'🧙', name:'Ông Tùng',   zone:'market',  dialog:'Tôi có power-up tốt lắm! 100 XP = x2 SRS.',    quest:'trade' },
-  { id:'aibot',     x:18, y:18, emoji:'🤖', name:'AI Bot',     zone:'cafe',    dialog:'Tôi có thể giúp bạn luyện giao tiếp tiếng Anh!', quest:'chat' },
-  { id:'elder',     x:31, y:17, emoji:'🧓', name:'Ông Nam',    zone:'park',    dialog:'Ngồi đây nghỉ ngơi. Kể về tiến độ học của bạn đi!', quest:'rest' },
+const NPCS=[
+  {id:'lib',x:3,y:3,emoji:'👩‍🏫',name:'Cô Lan',zone:'library'},
+  {id:'farm',x:16,y:4,emoji:'👨‍🌾',name:'Chú Hùng',zone:'farm'},
+  {id:'arena',x:27,y:3,emoji:'⚔️',name:'Thầy Dũng',zone:'arena'},
+  {id:'shop',x:4,y:16,emoji:'🧙',name:'Ông Tùng',zone:'market'},
+  {id:'ai',x:15,y:14,emoji:'🤖',name:'AI Bot',zone:'cafe'},
+  {id:'elder',x:27,y:14,emoji:'🧓',name:'Ông Nam',zone:'park'},
 ];
 
 export class WorldPage {
-  constructor(db, store, bus) {
-    this.db=db; this.store=store; this.bus=bus;
-    this._player={ x:20, y:14, dir:'down', moving:false, name:'', avatar:'👤' };
-    this._others=[]; this._crops=[]; this._keys={};
-    this._nearNPC=null; this._dialog=null;
-    this._animFrame=null; this._presenceCh=null;
-    this._chatOpen=false; this._chatMsgs=[];
-    this._lastMove=0; this._worldChatInput='';
+  constructor(db,store,bus){
+    this.db=db;this.store=store;this.bus=bus;
+    this._p={x:16,y:11,name:'Me'};
+    this._others=[];this._crops=[];this._keys={};
+    this._nearNPC=null;this._camX=0;this._camY=0;
+    this._animFrame=null;this._presenceCh=null;
+    this._lastMove=0;this._chatMsgs=[];this._chatOpen=false;
   }
 
-  render() {
+  render(){
     const user=this.store.get('currentUser');
-    this._player.name = user?.display_name||user?.username||'Player';
-    this._player.avatar = user?.avatar_id ? '👤' : '👤';
-
+    this._p.name=(user?.display_name||user?.username||'You').slice(0,8);
     document.querySelector('.main').innerHTML=`
-    <div style="position:relative;height:calc(100vh - 60px);overflow:hidden;background:#1a1d23;font-family:var(--font)">
-
-      <!-- TOP HUD -->
-      <div style="position:absolute;top:0;left:0;right:0;z-index:100;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);padding:8px 16px;display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(255,255,255,0.1)">
-        <div style="font-size:14px;font-weight:800;color:white;display:flex;align-items:center;gap:6px">🌍 <span style="background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">StudyHub World</span></div>
-        <div style="flex:1"></div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);padding:4px 12px;border-radius:99px">
-          👤 <span id="worldPlayerName">${this._player.name}</span>
+    <div class="page" style="max-width:1100px">
+      <div class="page-header-row page-header">
+        <div>
+          <h1 class="page-title">🌍 StudyHub World</h1>
+          <p class="page-sub">Thế giới học tập trực tuyến · Gặp gỡ · Học tập · Chiến đấu</p>
         </div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);padding:4px 12px;border-radius:99px" id="worldOnline">🟢 1 online</div>
-        <div style="font-size:12px;color:#fbbf24;background:rgba(251,191,36,0.15);padding:4px 12px;border-radius:99px" id="worldXP">⭐ ${user?.xp||0} XP</div>
-        <button onclick="worldPage.toggleChat()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:99px;padding:4px 12px;font-size:12px;cursor:pointer">💬 Chat</button>
-        <button onclick="app.router.navigate('/dashboard')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:99px;padding:4px 12px;font-size:12px;cursor:pointer">← Thoát</button>
-      </div>
-
-      <!-- GAME CANVAS -->
-      <canvas id="worldCanvas" style="position:absolute;top:40px;left:0;cursor:none;image-rendering:pixelated"></canvas>
-
-      <!-- MINIMAP -->
-      <canvas id="minimap" style="position:absolute;top:52px;right:16px;border-radius:10px;border:2px solid rgba(255,255,255,0.2);width:120px;height:84px"></canvas>
-      <div style="position:absolute;top:144px;right:16px;font-size:9px;color:rgba(255,255,255,0.5);text-align:center">Minimap</div>
-
-      <!-- ZONE LABEL -->
-      <div id="zoneLabel" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:6px 16px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap"></div>
-
-      <!-- CONTROLS HINT -->
-      <div style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.6);border-radius:10px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,0.7)">
-        <div style="font-weight:700;margin-bottom:4px">Điều khiển</div>
-        <div>⬆⬇⬅➡ hoặc WASD di chuyển</div>
-        <div style="margin-top:2px">SPACE hoặc E để tương tác</div>
-        <div style="margin-top:2px">Click chuột để di chuyển đến</div>
-      </div>
-
-      <!-- NEARBY ACTION -->
-      <div id="nearbyAction" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity .3s;pointer-events:none">
-        <div style="background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 20px;text-align:center;color:white">
-          <div style="font-size:13px;font-weight:700" id="nearbyActionText">Nhấn E để tương tác</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="worldOnlineBadge" style="font-size:12px;padding:5px 12px;border-radius:99px;background:var(--green-l);color:var(--green);font-weight:600">🟢 1 online</div>
+          <button onclick="worldPage.toggleChat()" class="btn btn-ghost btn-sm">💬 Chat</button>
         </div>
       </div>
 
-      <!-- DIALOG BOX -->
-      <div id="dialogBox" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);min-width:400px;max-width:600px;display:none;z-index:200">
-        <div style="background:rgba(15,23,42,0.95);border:2px solid rgba(99,102,241,0.5);border-radius:16px;padding:20px;color:white;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <div style="font-size:28px" id="dialogNPCEmoji">👾</div>
-            <div style="font-size:14px;font-weight:700;color:#a78bfa" id="dialogNPCName">NPC</div>
-            <button onclick="worldPage.closeDialog()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer">✕</button>
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start">
+        <!-- GAME AREA -->
+        <div>
+          <!-- Canvas -->
+          <div style="background:#0f172a;border-radius:var(--r-xl);overflow:hidden;position:relative;box-shadow:var(--shadow-lg);border:2px solid rgba(255,255,255,0.1)">
+            <canvas id="worldCanvas" style="display:block;cursor:crosshair"></canvas>
+            <!-- Zone hint -->
+            <div id="zoneHint" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:white;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap"></div>
+            <!-- NPC interaction hint -->
+            <div id="npcHint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(99,102,241,0.95);color:white;padding:8px 18px;border-radius:99px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;box-shadow:0 4px 12px rgba(99,102,241,0.4)"></div>
           </div>
-          <div id="dialogText" style="font-size:14px;line-height:1.7;margin-bottom:16px;color:rgba(255,255,255,0.9)"></div>
-          <div id="dialogActions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+
+          <!-- Controls -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 14px;background:var(--white);border-radius:var(--r-lg);border:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted)">⬆⬇⬅➡ hoặc WASD · <strong>E/Space</strong> tương tác · Click chuột di chuyển</div>
+            <div style="display:flex;gap:8px">
+              ${[['⬆','w-up'],['⬇','w-down'],['⬅','w-left'],['➡','w-right']].map(([a,id])=>`<button id="${id}" style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:13px" onmousedown="worldPage._keyPress('${a==='⬆'?'ArrowUp':a==='⬇'?'ArrowDown':a==='⬅'?'ArrowLeft':'ArrowRight'}')">${a}</button>`).join('')}
+              <button style="height:30px;padding:0 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:11px;font-weight:600" onmousedown="worldPage._keyPress(' ')">E</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <!-- Player card -->
+          <div class="card" style="background:linear-gradient(135deg,#0f172a,#1e1b4b);color:white;border:none">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:20px">😊</div>
+              <div>
+                <div style="font-weight:700;font-size:14px">${this._p.name}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.5)" id="worldZoneLabel">📍 Đang đứng ở...</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px;text-align:center">
+                <div style="font-size:15px;font-weight:800;color:#60a5fa" id="wXP">${user?.xp||0}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,0.4)">XP</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px;text-align:center">
+                <div style="font-size:15px;font-weight:800;color:#4ade80" id="wCrops">0</div>
+                <div style="font-size:9px;color:rgba(255,255,255,0.4)">Cây từ</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Online players -->
+          <div class="card">
+            <div class="card-title">🟢 Người chơi online</div>
+            <div id="worldPlayerList" style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 0">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+                <div style="font-size:13px;font-weight:600">${this._p.name} <span style="font-size:10px;color:var(--muted)">(bạn)</span></div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Những người chơi đang online sẽ hiện ở đây</div>
+          </div>
+
+          <!-- Word Farm status -->
+          <div class="card">
+            <div class="card-title">🌱 Nông trại từ vựng</div>
+            <div id="farmStatus" style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Đang tải...</div>
+            <button onclick="app.router.navigate('/vocabulary')" class="btn btn-success btn-sm" style="width:100%;margin-top:10px;justify-content:center">💧 Đến ôn từ vựng</button>
+          </div>
+
+          <!-- World Chat -->
+          <div class="card" id="worldChatPanel" style="display:none">
+            <div class="card-title">💬 World Chat</div>
+            <div id="worldChatMsgs" style="height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:8px;padding:4px"></div>
+            <div style="display:flex;gap:6px">
+              <input id="worldChatInput" class="form-input" placeholder="Nhắn tin..." style="border-radius:99px;padding:6px 12px;font-size:12px" onkeydown="if(event.key==='Enter')worldPage.sendChat()">
+              <button onclick="worldPage.sendChat()" class="btn btn-primary btn-sm" style="border-radius:99px">↗</button>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- WORLD CHAT -->
-      <div id="worldChat" style="position:absolute;top:52px;right:152px;width:260px;display:none;flex-direction:column;background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;height:320px">
-        <div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:700;color:white">💬 World Chat</div>
-        <div id="worldChatMsgs" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:11px"></div>
-        <div style="padding:8px;border-top:1px solid rgba(255,255,255,0.1);display:flex;gap:6px">
-          <input id="worldChatInput" placeholder="Nhắn tin..." style="flex:1;background:rgba(255,255,255,0.1);border:none;border-radius:8px;padding:6px 10px;color:white;font-size:12px;outline:none" onkeydown="if(event.key==='Enter')worldPage.sendWorldChat()">
-          <button onclick="worldPage.sendWorldChat()" style="background:#4f46e5;border:none;border-radius:8px;padding:6px 10px;color:white;font-size:12px;cursor:pointer">→</button>
+    <!-- NPC Dialog -->
+    <div class="overlay" id="worldDialog">
+      <div class="modal" style="max-width:460px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="font-size:36px" id="dlgEmoji">👾</div>
+          <div>
+            <div style="font-size:16px;font-weight:800" id="dlgName">NPC</div>
+            <div style="font-size:12px;color:var(--muted)" id="dlgZone">Zone</div>
+          </div>
+          <button onclick="document.getElementById('worldDialog').classList.remove('open')" style="margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
         </div>
-      </div>
-
-      <!-- INVENTORY / CROPS -->
-      <div id="inventoryPanel" style="position:absolute;top:52px;left:16px;background:rgba(0,0,0,0.75);border-radius:12px;padding:10px;min-width:140px;display:none">
-        <div style="font-size:11px;font-weight:700;color:white;margin-bottom:8px">🌱 Word Farm</div>
-        <div id="cropsList" style="font-size:11px;color:rgba(255,255,255,0.8)"></div>
-        <button onclick="worldPage.waterAllCrops()" style="margin-top:8px;background:#16a34a;border:none;border-radius:8px;padding:6px 10px;color:white;font-size:11px;cursor:pointer;width:100%">💧 Tưới tất cả</button>
+        <div id="dlgText" style="font-size:14px;line-height:1.7;margin-bottom:18px;background:var(--bg2);border-radius:var(--r-lg);padding:14px"></div>
+        <div id="dlgActions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
       </div>
     </div>`;
 
     window.worldPage=this;
     this._initCanvas();
     this._initControls();
-    this._loadCrops();
+    this._loadFarm();
     this._startPresence();
     this._loop();
-    Toast.ok('🌍 Chào mừng đến StudyHub World!');
   }
 
-  // ── CANVAS ────────────────────────────────────────────────────────────────
-  _initCanvas() {
+  _initCanvas(){
     const canvas=document.getElementById('worldCanvas');
-    const cont=canvas.parentElement;
-    const W=cont.clientWidth, H=cont.clientHeight-40;
-    canvas.width=W; canvas.height=H;
-    this._W=W; this._H=H;
+    const container=canvas.parentElement;
+    const CW=Math.min(container.clientWidth||700, 780);
+    const CH=Math.floor(CW*0.56);
+    canvas.width=CW; canvas.height=CH;
+    this._CW=CW; this._CH=CH;
     this._ctx=canvas.getContext('2d');
-    this._camX=this._player.x*TILE-W/2;
-    this._camY=this._player.y*TILE-H/2;
-
-    // Minimap
-    const mm=document.getElementById('minimap');
-    mm.width=120; mm.height=84;
-    this._mmCtx=mm.getContext('2d');
-
-    canvas.addEventListener('click',(e)=>{
-      const rect=canvas.getBoundingClientRect();
-      const wx=Math.floor((e.clientX-rect.left+this._camX)/TILE);
-      const wy=Math.floor((e.clientY-rect.top+this._camY)/TILE);
-      this._moveTo(wx,wy);
+    this._camX=(this._p.x*TILE)-(CW/2);
+    this._camY=(this._p.y*TILE)-(CH/2);
+    canvas.addEventListener('click',e=>{
+      const r=canvas.getBoundingClientRect();
+      const wx=Math.floor((e.clientX-r.left+this._camX)/TILE);
+      const wy=Math.floor((e.clientY-r.top+this._camY)/TILE);
+      this._p.x=Math.max(0,Math.min(wx,MAP_W-1));
+      this._p.y=Math.max(0,Math.min(wy,MAP_H-1));
     });
   }
 
-  _initControls() {
+  _initControls(){
     this._keys={};
-    this._onKeyDown = (e) => {
+    this._kd=e=>{
       this._keys[e.key]=true;
-      if((e.key===' '||e.key==='e'||e.key==='E')&&this._nearNPC) {
-        e.preventDefault(); this._interactNPC(this._nearNPC);
-      }
+      if((e.key===' '||e.key==='e'||e.key==='E')&&this._nearNPC){e.preventDefault();this._openDialog(this._nearNPC);}
     };
-    this._onKeyUp=(e)=>{ this._keys[e.key]=false; };
-    window.addEventListener('keydown',this._onKeyDown);
-    window.addEventListener('keyup',this._onKeyUp);
+    this._ku=e=>{this._keys[e.key]=false;};
+    window.addEventListener('keydown',this._kd);
+    window.addEventListener('keyup',this._ku);
   }
 
-  _loop() {
-    const tick=()=>{
-      this._update();
-      this._draw();
-      this._animFrame=requestAnimationFrame(tick);
-    };
+  _keyPress(key){
+    const map={'ArrowUp':'w','ArrowDown':'s','ArrowLeft':'a','ArrowRight':'d',' ':' '};
+    const dx=key==='ArrowLeft'?-1:key==='ArrowRight'?1:0;
+    const dy=key==='ArrowUp'?-1:key==='ArrowDown'?1:0;
+    if(dx||dy){this._p.x=Math.max(0,Math.min(this._p.x+dx,MAP_W-1));this._p.y=Math.max(0,Math.min(this._p.y+dy,MAP_H-1));}
+    if(key===' '&&this._nearNPC) this._openDialog(this._nearNPC);
+  }
+
+  _loop(){
+    const tick=()=>{this._update();this._draw();this._animFrame=requestAnimationFrame(tick);};
     this._animFrame=requestAnimationFrame(tick);
   }
 
-  _update() {
-    const now=Date.now(); if(now-this._lastMove<120) return;
+  _update(){
+    const now=Date.now(); if(now-this._lastMove<140) return;
     const K=this._keys; let dx=0,dy=0;
-    if(K['ArrowLeft']||K['a']||K['A']) dx=-1;
-    else if(K['ArrowRight']||K['d']||K['D']) dx=1;
-    if(K['ArrowUp']||K['w']||K['W']) dy=-1;
-    else if(K['ArrowDown']||K['s']||K['S']) dy=1;
-    if(dx||dy) {
-      this._movePlayer(dx,dy);
+    if(K['ArrowLeft']||K['a']||K['A'])dx=-1;
+    else if(K['ArrowRight']||K['d']||K['D'])dx=1;
+    if(K['ArrowUp']||K['w']||K['W'])dy=-1;
+    else if(K['ArrowDown']||K['s']||K['S'])dy=1;
+    if(dx||dy){
+      this._p.x=Math.max(0,Math.min(this._p.x+dx,MAP_W-1));
+      this._p.y=Math.max(0,Math.min(this._p.y+dy,MAP_H-1));
       this._lastMove=now;
+      // Broadcast
+      if(now-this._lastBroadcast>400){
+        this._lastBroadcast=now;
+        this._presenceCh?.track?.({id:this.store.get('currentUser')?.id,name:this._p.name,x:this._p.x,y:this._p.y});
+      }
     }
-    // Check NPC proximity
+    // Check NPC
     let near=null;
-    for(const npc of NPCS) {
-      const dist=Math.abs(npc.x-this._player.x)+Math.abs(npc.y-this._player.y);
-      if(dist<=2){ near=npc; break; }
-    }
+    for(const n of NPCS){if(Math.abs(n.x-this._p.x)+Math.abs(n.y-this._p.y)<=2){near=n;break;}}
     this._nearNPC=near;
-    const na=document.getElementById('nearbyAction');
-    if(na){na.style.opacity=near?'1':'0'; if(near)document.getElementById('nearbyActionText').textContent=`Nhấn E để nói chuyện với ${near.name}`;}
-    // Zone detection
-    this._detectZone();
-    // Cam follow
-    this._camX+=(this._player.x*TILE-this._W/2-this._camX)*0.12;
-    this._camY+=(this._player.y*TILE-this._H/2-this._camY)*0.12;
-    this._camX=Math.max(0,Math.min(this._camX,MAP_W*TILE-this._W));
-    this._camY=Math.max(0,Math.min(this._camY,MAP_H*TILE-this._H));
+    const nh=document.getElementById('npcHint');
+    if(nh){nh.style.opacity=near?'1':'0';if(near)nh.textContent=`Nhấn E để nói chuyện với ${near.name}`;}
+    // Zone
+    this._updateZone();
+    // Camera smooth
+    this._camX+=(this._p.x*TILE-this._CW/2-this._camX)*0.1;
+    this._camY+=(this._p.y*TILE-this._CH/2-this._camY)*0.1;
+    this._camX=Math.max(0,Math.min(this._camX,MAP_W*TILE-this._CW));
+    this._camY=Math.max(0,Math.min(this._camY,MAP_H*TILE-this._CH));
   }
 
-  _movePlayer(dx,dy) {
-    const nx=this._player.x+dx, ny=this._player.y+dy;
-    if(nx<0||nx>=MAP_W||ny<0||ny>=MAP_H) return;
-    // Water collision (decorative tiles)
-    this._player.x=nx; this._player.y=ny;
-    this._player.dir=dy<0?'up':dy>0?'down':dx<0?'left':'right';
-    // Broadcast position
-    if(this._presenceCh&&Date.now()-this._lastBroadcast>300) {
-      this._lastBroadcast=Date.now();
-      this._presenceCh.track({ id:this.store.get('currentUser')?.id, name:this._player.name, x:this._player.x, y:this._player.y });
+  _updateZone(){
+    let curZone=null;
+    for(const [id,z] of Object.entries(ZONES)){
+      if(this._p.x>=z.x&&this._p.x<z.x+z.w&&this._p.y>=z.y&&this._p.y<z.y+z.h){curZone={id,...z};break;}
+    }
+    if(this._curZoneId!==curZone?.id){
+      this._curZoneId=curZone?.id;
+      const lbl=document.getElementById('worldZoneLabel');
+      if(lbl)lbl.textContent=curZone?`📍 ${curZone.label}`:' 📍 Ngoài đường';
+      const hint=document.getElementById('zoneHint');
+      if(hint&&curZone){hint.textContent=`${curZone.label} — ${curZone.desc}`;hint.style.opacity='1';setTimeout(()=>{if(hint)hint.style.opacity='0';},2500);}
     }
   }
 
-  _moveTo(tx,ty) {
-    // Simple path - just teleport with animation
-    this._player.x=Math.max(0,Math.min(tx,MAP_W-1));
-    this._player.y=Math.max(0,Math.min(ty,MAP_H-1));
-  }
-
-  _detectZone() {
-    for(const [zid,z] of Object.entries(ZONES)) {
-      if(this._player.x>=z.x&&this._player.x<z.x+z.w&&this._player.y>=z.y&&this._player.y<z.y+z.h) {
-        if(this._curZone!==zid) {
-          this._curZone=zid;
-          const lbl=document.getElementById('zoneLabel');
-          if(lbl){lbl.textContent=`${z.label} — ${z.desc}`;lbl.style.opacity='1';setTimeout(()=>{if(lbl)lbl.style.opacity='0';},3000);}
-          if(zid==='farm'){document.getElementById('inventoryPanel').style.display='block';}
-          else{document.getElementById('inventoryPanel').style.display='none';}
-        }
-        return;
-      }
-    }
-    this._curZone=null;
-    document.getElementById('inventoryPanel').style.display='none';
-  }
-
-  // ── DRAW ──────────────────────────────────────────────────────────────────
-  _draw() {
-    const ctx=this._ctx, cx=this._camX, cy=this._camY, T=TILE;
-    ctx.clearRect(0,0,this._W,this._H);
-
-    // Background grass
-    ctx.fillStyle='#4ade80';
-    ctx.fillRect(0,0,this._W,this._H);
-
-    // Grass texture pattern
-    for(let tx=0;tx<MAP_W;tx++) for(let ty=0;ty<MAP_H;ty++) {
-      const sx=tx*T-cx, sy=ty*T-cy;
-      if(sx<-T||sx>this._W||sy<-T||sy>this._H) continue;
-      const isDark=(tx+ty)%2===0;
-      ctx.fillStyle=isDark?'#4ade80':'#22c55e';
+  _draw(){
+    const ctx=this._ctx,cx=this._camX,cy=this._camY,T=TILE;
+    ctx.clearRect(0,0,this._CW,this._CH);
+    // Bg
+    ctx.fillStyle='#2d6a4f';ctx.fillRect(0,0,this._CW,this._CH);
+    // Grass tiles
+    for(let tx=0;tx<MAP_W;tx++)for(let ty=0;ty<MAP_H;ty++){
+      const sx=tx*T-cx,sy=ty*T-cy;
+      if(sx<-T||sx>this._CW||sy<-T||sy>this._CH)continue;
+      ctx.fillStyle=(tx+ty)%2?'#2d6a4f':'#27ae60';
       ctx.fillRect(sx,sy,T,T);
-      // Tiny grass dots
-      if((tx*7+ty*3)%5===0){ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(sx+4,sy+4,2,2);}
     }
-
-    // Draw zones
-    for(const z of Object.values(ZONES)) {
-      const sx=z.x*T-cx, sy=z.y*T-cy;
-      // Zone floor
-      ctx.fillStyle=z.color;
-      ctx.fillRect(sx,sy,z.w*T,z.h*T);
-      // Zone border
-      ctx.strokeStyle='rgba(0,0,0,0.2)';
-      ctx.lineWidth=2;
-      ctx.strokeRect(sx,sy,z.w*T,z.h*T);
-      // Zone label
-      if(sx>-100&&sx<this._W&&sy>-20&&sy<this._H) {
-        ctx.fillStyle='rgba(0,0,0,0.6)';
-        ctx.font='bold 11px sans-serif';
-        ctx.textAlign='center';
-        ctx.fillText(z.label,sx+z.w*T/2,sy+14);
-      }
-    }
-
-    // Draw paths (roads)
-    ctx.fillStyle='#d6b896';
-    ctx.fillRect(12*T-cx,0*T-cy,2*T,MAP_H*T);  // vertical road
-    ctx.fillRect(0*T-cx,12*T-cy,MAP_W*T,2*T);  // horizontal road
-
-    // Draw decorations
-    this._drawDecorations(ctx,cx,cy,T);
-
-    // Draw crops
-    for(const crop of this._crops) {
-      const sx=crop.x*T-cx+T/2, sy=crop.y*T-cy+T/2;
-      if(sx<-T||sx>this._W) continue;
-      const size=crop.level>=3?22:crop.level>=2?18:crop.level>=1?14:10;
-      ctx.font=`${size}px serif`;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(crop.level>=3?'🌳':crop.level>=2?'🌿':crop.level>=1?'🌱':'🌰',sx,sy);
-    }
-
-    // Draw NPCs
-    for(const npc of NPCS) {
-      const sx=npc.x*T-cx, sy=npc.y*T-cy;
-      if(sx<-T||sx>this._W) continue;
-      // Shadow
-      ctx.fillStyle='rgba(0,0,0,0.2)';
-      ctx.beginPath(); ctx.ellipse(sx+T/2,sy+T-4,10,4,0,0,Math.PI*2); ctx.fill();
-      // Emoji
-      ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(npc.emoji,sx+T/2,sy+T/2-2);
-      // Name
-      ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.beginPath(); ctx.roundRect(sx+T/2-24,sy-14,48,14,4); ctx.fill();
-      ctx.fillStyle='white'; ctx.font='bold 9px sans-serif';
-      ctx.fillText(npc.name,sx+T/2,sy-7);
-      // Interaction indicator
-      if(this._nearNPC?.id===npc.id){ctx.fillStyle='#fbbf24';ctx.font='14px serif';ctx.fillText('!',sx+T-4,sy);}
-    }
-
-    // Draw other players
-    for(const other of this._others) {
-      const sx=other.x*T-cx, sy=other.y*T-cy;
-      if(sx<-T||sx>this._W) continue;
-      ctx.fillStyle='rgba(99,102,241,0.6)'; ctx.beginPath(); ctx.roundRect(sx+4,sy+4,T-8,T-8,6); ctx.fill();
-      ctx.font='18px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('🧑',sx+T/2,sy+T/2-2);
-      ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.beginPath(); ctx.roundRect(sx+T/2-20,sy-14,40,14,4); ctx.fill();
-      ctx.fillStyle='white'; ctx.font='8px sans-serif'; ctx.fillText(other.name||'?',sx+T/2,sy-7);
-    }
-
-    // Draw player
-    const px=this._player.x*T-cx, py=this._player.y*T-cy;
-    // Shadow
-    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(px+T/2,py+T-3,12,5,0,0,Math.PI*2); ctx.fill();
-    // Body (highlight ring)
-    ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.roundRect(px+2,py+2,T-4,T-4,8); ctx.stroke();
-    ctx.fillStyle='rgba(79,70,229,0.3)'; ctx.beginPath(); ctx.roundRect(px+2,py+2,T-4,T-4,8); ctx.fill();
-    // Player emoji
-    ctx.font='22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('😊',px+T/2,py+T/2-2);
-    // Name tag
-    ctx.fillStyle='rgba(79,70,229,0.9)'; ctx.beginPath(); ctx.roundRect(px+T/2-24,py-16,48,16,5); ctx.fill();
-    ctx.fillStyle='white'; ctx.font='bold 9px sans-serif';
-    ctx.fillText(this._player.name.slice(0,8),px+T/2,py-8);
-
-    // Draw minimap
-    this._drawMinimap();
-  }
-
-  _drawDecorations(ctx,cx,cy,T) {
-    const deco=[
-      {x:11,y:0,e:'🌲'},{x:11,y:4,e:'🌲'},{x:11,y:8,e:'🌲'},
-      {x:13,y:12,e:'🌊'},{x:13,y:11,e:'🌊'},
-      {x:25,y:12,e:'🌊'},{x:25,y:13,e:'🌊'},
-      {x:24,y:2,e:'🏠'},{x:24,y:6,e:'🏠'},
-      {x:1,y:12,e:'🌺'},{x:8,y:1,e:'🌸'},
-    ];
-    for(const d of deco){
-      const sx=d.x*T-cx,sy=d.y*T-cy;
-      if(sx<-T||sx>this._W) continue;
-      ctx.font='20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(d.e,sx+T/2,sy+T/2);
-    }
-  }
-
-  _drawMinimap() {
-    const ctx=this._mmCtx, mw=120, mh=84;
-    const scx=mw/MAP_W, scy=mh/MAP_H;
-    ctx.fillStyle='#166534'; ctx.fillRect(0,0,mw,mh);
+    // Roads
+    ctx.fillStyle='#c8a96e';
+    ctx.fillRect(10*T-cx,0-cy,2*T,MAP_H*T);
+    ctx.fillRect(0-cx,10*T-cy,MAP_W*T,2*T);
     // Zones
-    for(const z of Object.values(ZONES)){ctx.fillStyle=z.color+'aa';ctx.fillRect(z.x*scx,z.y*scy,z.w*scx,z.h*scy);}
-    // Others
-    for(const o of this._others){ctx.fillStyle='#818cf8';ctx.fillRect(o.x*scx-1.5,o.y*scy-1.5,3,3);}
-    // Player
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(this._player.x*scx,this._player.y*scy,3,0,Math.PI*2);ctx.fill();
-    // Viewport rect
-    ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
-    ctx.strokeRect(this._camX/TILE*scx,this._camY/TILE*scy,this._W/TILE*scx,this._H/TILE*scy);
-  }
-
-  // ── NPC INTERACTIONS ──────────────────────────────────────────────────────
-  _interactNPC(npc) {
-    const dlg=document.getElementById('dialogBox');
-    document.getElementById('dialogNPCEmoji').textContent=npc.emoji;
-    document.getElementById('dialogNPCName').textContent=npc.name;
-    document.getElementById('dialogText').textContent=npc.dialog;
-    const acts=document.getElementById('dialogActions');
-    acts.innerHTML='';
-    const addBtn=(label,color,fn)=>{const b=document.createElement('button');b.textContent=label;b.style.cssText=`background:${color};color:white;border:none;border-radius:99px;padding:8px 16px;font-size:12px;cursor:pointer;font-weight:600`;b.onclick=fn;acts.appendChild(b);};
-
-    if(npc.zone==='library'){
-      addBtn('📚 Học từ vựng','#3b82f6',()=>{ this.closeDialog(); app.router.navigate('/vocabulary'); });
-      addBtn('📅 Xem lộ trình','#8b5cf6',()=>{ this.closeDialog(); app.router.navigate('/roadmap'); });
-    } else if(npc.zone==='farm'){
-      addBtn('🌱 Trồng từ mới','#16a34a',()=>this._plantCrop());
-      addBtn('💧 Ôn tập (tưới cây)','#0891b2',()=>this._waterCrop());
-    } else if(npc.zone==='arena'){
-      addBtn('⚔️ Vào Word Battle','#dc2626',()=>{ this.closeDialog(); app.router.navigate('/game'); });
-      addBtn('👥 Thách bạn bè','#f97316',()=>{ this.closeDialog(); app.router.navigate('/friends'); });
-    } else if(npc.zone==='cafe'){
-      addBtn('🤖 Chat AI Tutor','#7c3aed',()=>{ this.closeDialog(); app.router.navigate('/ai-tutor'); });
-      addBtn('💬 Luyện giao tiếp','#2563eb',()=>{ this.closeDialog(); app.router.navigate('/conversation'); });
-    } else if(npc.zone==='market'){
-      addBtn('📊 Xem tiến độ','#d97706',()=>{ this.closeDialog(); app.router.navigate('/dashboard'); });
-      addBtn('🏆 Bảng xếp hạng','#b45309',()=>{ this.closeDialog(); app.router.navigate('/leaderboard'); });
-    } else if(npc.zone==='park'){
-      addBtn('😌 Nghỉ ngơi (+XP)','#0d9488',()=>{ this._restInPark(); });
-      addBtn('👥 Xem bạn bè','#4f46e5',()=>{ this.closeDialog(); app.router.navigate('/friends'); });
+    for(const z of Object.values(ZONES)){
+      const sx=z.x*T-cx,sy=z.y*T-cy;
+      if(sx>this._CW||sy>this._CH||sx+z.w*T<0||sy+z.h*T<0)continue;
+      ctx.fillStyle=z.color+'cc';ctx.fillRect(sx,sy,z.w*T,z.h*T);
+      ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=1.5;ctx.strokeRect(sx,sy,z.w*T,z.h*T);
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+      ctx.fillText(z.label,sx+z.w*T/2,sy+12);
     }
-    addBtn('Đóng','rgba(255,255,255,0.2)',()=>this.closeDialog());
-    dlg.style.display='block';
+    // Decorations
+    [
+      {x:10,y:0,e:'🌲'},{x:11,y:5,e:'🌲'},{x:10,y:9,e:'🌲'},
+      {x:11,y:12,e:'🌊'},{x:11,y:10,e:'🌊'},{x:22,y:9,e:'🌊'},
+      {x:9,y:4,e:'🌺'},{x:22,y:4,e:'🏠'},{x:9,y:16,e:'🌸'},
+    ].forEach(d=>{
+      const sx=d.x*T-cx,sy=d.y*T-cy;
+      if(sx<-T||sx>this._CW)return;
+      ctx.font=`${T-4}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(d.e,sx+T/2,sy+T/2);
+    });
+    // Crops
+    this._crops.forEach(c=>{
+      const sx=c.x*T-cx+T/2,sy=c.y*T-cy+T/2;
+      if(sx<-T||sx>this._CW)return;
+      const size=c.level>=3?20:c.level>=2?16:c.level>=1?13:10;
+      ctx.font=`${size}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(c.level>=3?'🌳':c.level>=2?'🌿':c.level>=1?'🌱':'🌰',sx,sy);
+    });
+    // NPCs
+    NPCS.forEach(n=>{
+      const sx=n.x*T-cx,sy=n.y*T-cy;
+      if(sx<-T||sx>this._CW)return;
+      ctx.fillStyle='rgba(0,0,0,0.18)';ctx.beginPath();ctx.ellipse(sx+T/2,sy+T-2,9,4,0,0,Math.PI*2);ctx.fill();
+      ctx.font=`${T-4}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.emoji,sx+T/2,sy+T/2-1);
+      // name
+      ctx.fillStyle='rgba(0,0,0,0.65)';ctx.beginPath();ctx.roundRect?ctx.roundRect(sx+T/2-20,sy-13,40,13,4):ctx.rect(sx+T/2-20,sy-13,40,13);ctx.fill();
+      ctx.fillStyle='white';ctx.font='bold 8px sans-serif';ctx.fillText(n.name,sx+T/2,sy-7);
+      if(this._nearNPC?.id===n.id){ctx.fillStyle='#fbbf24';ctx.font='12px serif';ctx.fillText('❗',sx+T,sy);}
+    });
+    // Others
+    this._others.forEach(o=>{
+      const sx=o.x*T-cx,sy=o.y*T-cy;
+      if(sx<-T||sx>this._CW)return;
+      ctx.fillStyle='rgba(79,70,229,0.5)';ctx.beginPath();ctx.roundRect?ctx.roundRect(sx+3,sy+3,T-6,T-6,5):ctx.rect(sx+3,sy+3,T-6,T-6);ctx.fill();
+      ctx.font=`${T-6}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🧑',sx+T/2,sy+T/2);
+      ctx.fillStyle='rgba(79,70,229,0.9)';ctx.beginPath();ctx.roundRect?ctx.roundRect(sx+T/2-18,sy-13,36,13,4):ctx.rect(sx+T/2-18,sy-13,36,13);ctx.fill();
+      ctx.fillStyle='white';ctx.font='bold 8px sans-serif';ctx.fillText((o.name||'?').slice(0,6),sx+T/2,sy-7);
+    });
+    // Player
+    const px=this._p.x*T-cx,py=this._p.y*T-cy;
+    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.ellipse(px+T/2,py+T-2,11,4,0,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect?ctx.roundRect(px+2,py+2,T-4,T-4,7):ctx.rect(px+2,py+2,T-4,T-4);ctx.stroke();
+    ctx.fillStyle='rgba(79,70,229,0.25)';ctx.fill();
+    ctx.font=`${T-5}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('😊',px+T/2,py+T/2-1);
+    ctx.fillStyle='#4f46e5';ctx.beginPath();ctx.roundRect?ctx.roundRect(px+T/2-22,py-14,44,14,5):ctx.rect(px+T/2-22,py-14,44,14);ctx.fill();
+    ctx.fillStyle='white';ctx.font='bold 8px sans-serif';ctx.fillText(this._p.name,px+T/2,py-7);
   }
 
-  closeDialog() { document.getElementById('dialogBox').style.display='none'; }
+  _openDialog(npc){
+    document.getElementById('dlgEmoji').textContent=npc.emoji;
+    document.getElementById('dlgName').textContent=npc.name;
+    document.getElementById('dlgZone').textContent=ZONES[npc.zone]?.label||'';
+    const dialogs={
+      lib:'Chào bạn! Thư viện luôn mở cửa. Hôm nay bạn muốn học từ vựng mới hay xem lộ trình 30 ngày?',
+      farm:'Cây từ vựng của bạn cần được tưới! Ôn từ thì cây lớn, bỏ ôn cây héo. Vào Từ vựng để ôn nhé!',
+      arena:'Sẵn sàng chiến đấu chưa? Vào Word Battle để thách đấu với người khác!',
+      shop:'Xem tiến độ và bảng xếp hạng tại đây. Bạn đứng thứ mấy rồi?',
+      ai:'Tôi là AI Bot! Tôi có thể giúp bạn luyện giao tiếp, phân tích tiến độ và tạo bài tập.',
+      elder:'Nghỉ ngơi đôi chút rất quan trọng! Bạn học đều đặn chưa? Đến bạn bè xem ai đang online!',
+    };
+    document.getElementById('dlgText').textContent=dialogs[npc.id]||'Xin chào!';
+    const acts=document.getElementById('dlgActions');acts.innerHTML='';
+    const btn=(t,c,fn)=>{const b=document.createElement('button');b.textContent=t;b.className='btn btn-sm';b.style.cssText=`background:${c};color:white;border:none;font-weight:600`;b.onclick=fn;acts.appendChild(b);};
+    if(npc.zone==='library'){btn('📚 Từ vựng','#3b82f6',()=>{this._close();app.router.navigate('/vocabulary');});btn('📅 Lộ trình','#8b5cf6',()=>{this._close();app.router.navigate('/roadmap');});}
+    else if(npc.zone==='farm'){btn('💧 Ôn từ ngay','#16a34a',()=>{this._close();app.router.navigate('/vocabulary');});}
+    else if(npc.zone==='arena'){btn('⚔️ Word Battle','#dc2626',()=>{this._close();app.router.navigate('/game');});btn('👥 Thách bạn','#f97316',()=>{this._close();app.router.navigate('/friends');});}
+    else if(npc.zone==='market'){btn('📊 Tiến độ','#d97706',()=>{this._close();app.router.navigate('/dashboard');});btn('🏆 BXH','#b45309',()=>{this._close();app.router.navigate('/leaderboard');});}
+    else if(npc.zone==='cafe'){btn('🤖 AI Tutor','#7c3aed',()=>{this._close();app.router.navigate('/ai-tutor');});btn('💬 Giao tiếp','#2563eb',()=>{this._close();app.router.navigate('/conversation');});}
+    else if(npc.zone==='park'){btn('👥 Bạn bè','#0d9488',()=>{this._close();app.router.navigate('/friends');});}
+    btn('Đóng','#6b7280',()=>this._close());
+    document.getElementById('worldDialog').classList.add('open');
+  }
+  _close(){document.getElementById('worldDialog').classList.remove('open');}
 
-  // ── FARM MECHANICS ────────────────────────────────────────────────────────
-  async _loadCrops() {
-    const user=this.store.get('currentUser');
-    try {
-      const vocab=await this.db.select('vocabulary',{eq:{user_id:user.id}}).catch(()=>[]);
-      // Convert SRS vocab to crops
-      this._crops=vocab.slice(0,20).map((v,i)=>({
-        word:v.word, level:Math.min(v.srs_level||0,3),
-        x:15+Math.floor(i%5)*2, y:3+Math.floor(i/5)*2,
-        nextReview:v.next_review, id:v.id
-      }));
-      this._renderCropsList();
-    } catch{}
+  async _loadFarm(){
+    const u=this.store.get('currentUser');
+    try{
+      const vocab=await this.db.select('vocabulary',{eq:{user_id:u.id}}).catch(()=>[]);
+      this._crops=vocab.slice(0,15).map((v,i)=>({word:v.word,level:Math.min(v.srs_level||0,3),x:13+Math.floor(i%4)*2,y:2+Math.floor(i/4)*2}));
+      const el=document.getElementById('farmStatus');
+      const wCrops=document.getElementById('wCrops');
+      if(wCrops)wCrops.textContent=this._crops.length;
+      if(el){
+        const due=vocab.filter(v=>new Date(v.next_review)<=new Date()).length;
+        const mastered=vocab.filter(v=>v.srs_level>=4).length;
+        el.innerHTML=`<div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:12px"><span>🌳 Thành thạo</span><strong>${mastered}</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px"><span>🌱 Đang học</span><strong>${vocab.length-mastered}</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:${due>0?'var(--orange)':'var(--green)'}"><span>💧 Cần ôn hôm nay</span><strong>${due}</strong></div>
+        </div>`;
+      }
+    }catch{}
   }
 
-  _renderCropsList() {
-    const el=document.getElementById('cropsList'); if(!el) return;
-    el.innerHTML=this._crops.slice(0,8).map(c=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <span>${c.level>=3?'🌳':c.level>=2?'🌿':c.level>=1?'🌱':'🌰'}</span>
-      <span style="font-size:10px">${c.word}</span>
-      <span style="margin-left:auto;font-size:9px;color:rgba(255,255,255,0.5)">Lv${c.level}</span>
-    </div>`).join('');
-  }
-
-  _plantCrop() {
-    Toast.info('Đến trang Từ vựng để thêm từ mới vào nông trại!');
-    this.closeDialog();
-    setTimeout(()=>app.router.navigate('/vocabulary'),1000);
-  }
-
-  _waterCrop() {
-    const dueCrops=this._crops.filter(c=>new Date(c.nextReview)<=new Date());
-    if(!dueCrops.length){Toast.ok('Tất cả cây đã được tưới hôm nay! 🌳');this.closeDialog();return;}
-    Toast.ok(`${dueCrops.length} từ cần ôn tập! Chuyển đến Flashcard...`);
-    this.closeDialog();
-    setTimeout(()=>app.router.navigate('/vocabulary'),800);
-  }
-
-  async waterAllCrops() { this._waterCrop(); }
-
-  async _restInPark() {
-    const user=this.store.get('currentUser');
-    try {
-      await this.db.update('profiles',user.id,{xp:(user.xp||0)+5});
-      Toast.ok('+5 XP cho việc nghỉ ngơi! 😌');
-    } catch{}
-    this.closeDialog();
-  }
-
-  // ── WORLD CHAT ─────────────────────────────────────────────────────────────
-  toggleChat() {
-    const el=document.getElementById('worldChat');
+  toggleChat(){
     this._chatOpen=!this._chatOpen;
-    el.style.display=this._chatOpen?'flex':'none';
-    if(this._chatOpen) document.getElementById('worldChatInput')?.focus();
+    const el=document.getElementById('worldChatPanel');
+    if(el)el.style.display=this._chatOpen?'block':'none';
+    if(this._chatOpen)document.getElementById('worldChatInput')?.focus();
   }
 
-  async sendWorldChat() {
+  sendChat(){
     const input=document.getElementById('worldChatInput');
-    const text=input?.value?.trim(); if(!text) return;
+    const text=input?.value?.trim();if(!text)return;
     input.value='';
     const user=this.store.get('currentUser');
-    const msg={name:user?.display_name||'You',text,time:Date.now()};
-    this._addWorldChatMsg(msg);
-    // Broadcast via Supabase
-    try {
-      this.db.client.channel('world-chat').send({type:'broadcast',event:'msg',payload:msg});
-    } catch{}
+    const msg={name:user?.display_name||'Bạn',text,time:Date.now()};
+    this._addChatMsg(msg);
+    try{this.db.client.channel('world-chat').send({type:'broadcast',event:'msg',payload:msg});}catch{}
   }
 
-  _addWorldChatMsg(msg) {
+  _addChatMsg(msg){
     this._chatMsgs.push(msg);
-    if(this._chatMsgs.length>50) this._chatMsgs=this._chatMsgs.slice(-50);
-    const el=document.getElementById('worldChatMsgs'); if(!el) return;
-    const div=document.createElement('div');
-    div.innerHTML=`<span style="color:#a78bfa;font-weight:700">${msg.name}:</span> <span style="color:rgba(255,255,255,0.85)">${msg.text}</span>`;
-    el.appendChild(div); el.scrollTop=el.scrollHeight;
+    const el=document.getElementById('worldChatMsgs');if(!el)return;
+    const d=document.createElement('div');
+    d.style.cssText='font-size:11px;line-height:1.5;padding:3px 6px;border-radius:6px;background:var(--bg2)';
+    d.innerHTML=`<span style="font-weight:700;color:var(--blue)">${msg.name}:</span> ${msg.text}`;
+    el.appendChild(d);el.scrollTop=el.scrollHeight;
   }
 
-  // ── PRESENCE ──────────────────────────────────────────────────────────────
-  _startPresence() {
-    const user=this.store.get('currentUser'); if(!user) return;
+  _startPresence(){
+    const user=this.store.get('currentUser');if(!user)return;
     this._presenceCh=this.db.client.channel('world-presence',{config:{presence:{key:user.id}}});
     this._presenceCh
       .on('presence',{event:'sync'},()=>{
         const state=this._presenceCh.presenceState();
-        this._others=Object.values(state).flat()
-          .filter(u=>u.id!==user.id)
-          .map(u=>({id:u.id,name:u.name,x:u.x,y:u.y}));
-        const cnt=document.getElementById('worldOnline');
-        if(cnt) cnt.textContent=`🟢 ${this._others.length+1} online`;
+        this._others=Object.values(state).flat().filter(u=>u.id!==user.id).map(u=>({id:u.id,name:u.name,x:u.x||16,y:u.y||11}));
+        const cnt=document.getElementById('worldOnlineBadge');
+        if(cnt){cnt.textContent=`🟢 ${this._others.length+1} online`;cnt.style.background=this._others.length?'var(--green-l)':'var(--bg2)';cnt.style.color=this._others.length?'var(--green)':'var(--muted)';}
+        this._updatePlayerList();
       })
-      .on('broadcast',{event:'msg'},({payload})=>{
-        if(payload.name!==this._player.name) this._addWorldChatMsg(payload);
-      })
-      .subscribe(async(status)=>{
-        if(status==='SUBSCRIBED'){
-          await this._presenceCh.track({id:user.id,name:this._player.name,x:this._player.x,y:this._player.y});
-        }
-      });
+      .on('broadcast',{event:'msg'},({payload})=>{this._addChatMsg(payload);})
+      .subscribe(async s=>{if(s==='SUBSCRIBED'){await this._presenceCh.track({id:user.id,name:this._p.name,x:this._p.x,y:this._p.y});}});
     this._lastBroadcast=0;
   }
 
-  destroy() {
-    if(this._animFrame) cancelAnimationFrame(this._animFrame);
-    window.removeEventListener('keydown',this._onKeyDown);
-    window.removeEventListener('keyup',this._onKeyUp);
+  _updatePlayerList(){
+    const el=document.getElementById('worldPlayerList');if(!el)return;
+    const all=[{name:this._p.name,self:true},...this._others];
+    el.innerHTML=all.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+      <div style="font-size:12px;font-weight:${p.self?700:500}">${p.name}${p.self?' (bạn)':''}</div>
+    </div>`).join('');
+  }
+
+  destroy(){
+    if(this._animFrame)cancelAnimationFrame(this._animFrame);
+    window.removeEventListener('keydown',this._kd);
+    window.removeEventListener('keyup',this._ku);
     if(this._presenceCh){try{this._presenceCh.untrack();this._presenceCh.unsubscribe();}catch{}}
   }
 }

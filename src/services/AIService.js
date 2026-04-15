@@ -1,146 +1,158 @@
 /**
- * AIService — Quản lý API key cá nhân + gọi AI (Gemini free)
- * Mỗi user lưu key riêng vào localStorage, không chia sẻ.
+ * AIService v2 — Fixed model endpoints, personal API key management
  */
-
 const KEY_STORAGE = 'sh_gemini_key';
-const MODEL_CANDIDATES = [
-  { api:'v1beta', model:'gemini-2.0-flash' },
-  { api:'v1beta', model:'gemini-2.0-flash-lite' },
-  { api:'v1',     model:'gemini-1.5-flash' },
-  { api:'v1',     model:'gemini-1.5-flash-8b' },
+
+// Only use v1beta — v1 doesn't support all models
+const MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite', 
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-pro',
 ];
 
 export class AIService {
-  constructor() {
-    this._key = localStorage.getItem(KEY_STORAGE) || '';
-    this._modelIdx = 0;
-  }
-
-  getKey()       { return this._key; }
-  hasKey()       { return !!this._key && this._key.length > 10; }
-  setKey(k)      { this._key = k.trim(); localStorage.setItem(KEY_STORAGE, this._key); }
-  clearKey()     { this._key = ''; localStorage.removeItem(KEY_STORAGE); }
+  constructor() { this._key = localStorage.getItem(KEY_STORAGE) || ''; }
+  getKey()   { return this._key; }
+  hasKey()   { return this._key.length > 20; }
+  setKey(k)  { this._key = k.trim(); localStorage.setItem(KEY_STORAGE, this._key); }
+  clearKey() { this._key = ''; localStorage.removeItem(KEY_STORAGE); }
 
   async call(systemPrompt, messages, maxTokens = 1000) {
     if (!this.hasKey()) throw new Error('NO_KEY');
     const contents = [
-      { role:'user',  parts:[{ text: systemPrompt }] },
-      { role:'model', parts:[{ text: 'Đã hiểu. Tôi sẵn sàng hỗ trợ.' }] },
+      { role: 'user',  parts: [{ text: systemPrompt }] },
+      { role: 'model', parts: [{ text: 'Đã hiểu. Sẵn sàng hỗ trợ!' }] },
       ...messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
-        parts:[{ text: m.content }]
+        parts: [{ text: m.content || '' }]
       }))
     ];
-    const body = { contents, generationConfig:{ maxOutputTokens: maxTokens, temperature: 0.75 } };
+    const body = { contents, generationConfig: { maxOutputTokens: maxTokens, temperature: 0.75 } };
     let lastErr;
-    for (const { api, model } of MODEL_CANDIDATES) {
+    for (const model of MODELS) {
       try {
-        const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${this._key}`;
+        // Always use v1beta — it supports all current models
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this._key}`;
         const res  = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
         const data = await res.json();
-        if (!res.ok) {
-          const msg = data?.error?.message || `HTTP ${res.status}`;
-          if (res.status===429||res.status===404||msg.includes('quota')||msg.includes('not found')) { lastErr=new Error(msg); continue; }
-          throw new Error(msg);
+        if (data.error) {
+          const code = data.error.code || res.status;
+          const msg  = data.error.message || '';
+          // Skip to next model on quota/not-found
+          if (code === 429 || code === 404 || msg.includes('quota') || msg.includes('not found') || msg.includes('RESOURCE_EXHAUSTED')) {
+            lastErr = new Error(msg); continue;
+          }
+          // Invalid key — stop immediately
+          if (code === 400 && msg.includes('API_KEY_INVALID')) throw new Error('API_KEY_INVALID: ' + msg);
+          throw new Error(msg || `HTTP ${code}`);
         }
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Empty response from AI');
+        console.log(`✅ AI [${model}]:`, text.slice(0,60));
+        return text;
       } catch(e) {
         lastErr = e;
-        if (e.message?.includes('quota')||e.message?.includes('not found')||e.message?.includes('429')) continue;
-        throw e;
+        if (e.message?.includes('API_KEY_INVALID')) throw e; // don't retry bad key
+        // continue on quota/network errors
       }
     }
-    throw lastErr || new Error('Tất cả model đều lỗi');
+    throw lastErr || new Error('Tất cả model đều lỗi. Kiểm tra API key tại aistudio.google.com');
   }
 
-  // Shortcut for single-turn
   async ask(prompt, maxTokens = 800) {
-    return this.call('Bạn là AI assistant hữu ích. Trả lời ngắn gọn, chính xác.', [{ role:'user', content: prompt }], maxTokens);
+    return this.call('Trả lời ngắn gọn, chính xác bằng tiếng Việt.', [{ role:'user', content: prompt }], maxTokens);
   }
 }
 
-// Singleton
 export const aiService = new AIService();
 
-/**
- * Render modal để nhập/thay API key
- */
 export function showAPIKeyModal(onSuccess) {
-  const existing = document.getElementById('apiKeyModal');
-  if (existing) existing.remove();
-
+  document.getElementById('apiKeyModal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'apiKeyModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px)';
+  const hasKey = aiService.hasKey();
   modal.innerHTML = `
-    <div style="background:white;border-radius:24px;padding:32px;max-width:480px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.3);animation:slideUp .3s ease">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:48px;margin-bottom:12px">🔑</div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:6px">Cấu hình AI của bạn</div>
-        <div style="font-size:13px;color:#8896a5;line-height:1.6">Mỗi người dùng có API key riêng. Key được lưu trên máy bạn, không chia sẻ với ai.</div>
+    <div style="background:#fff;border-radius:20px;padding:28px;max-width:460px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,0.25);animation:kfSlideUp .3s cubic-bezier(.34,1.56,.64,1)">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px">🔑</div>
+        <div style="font-size:19px;font-weight:800;color:#0f172a;margin-bottom:5px">${hasKey ? '⚙️ Quản lý API Key' : 'Cấu hình AI của bạn'}</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.6">Key lưu trên máy bạn · Không ai khác đọc được</div>
       </div>
 
-      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px;margin-bottom:20px;font-size:12px;line-height:1.7">
-        <div style="font-weight:700;color:#15803d;margin-bottom:6px">✅ Cách lấy Gemini API key MIỄN PHÍ:</div>
+      ${!hasKey ? `<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px;margin-bottom:18px;font-size:12px;line-height:1.8">
+        <div style="font-weight:700;color:#15803d;margin-bottom:5px">✅ Lấy Gemini API Key MIỄN PHÍ:</div>
         <div style="color:#166534">
-          1. Truy cập <a href="https://aistudio.google.com" target="_blank" style="color:#2563eb;font-weight:600">aistudio.google.com</a><br>
-          2. Đăng nhập bằng Gmail<br>
-          3. Nhấn <strong>Get API Key</strong> → <strong>Create API key</strong><br>
-          4. Copy key và dán vào ô dưới
+          1. Vào <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;font-weight:700">aistudio.google.com/apikey</a><br>
+          2. Đăng nhập Gmail → <strong>Create API key</strong><br>
+          3. Copy và dán vào ô dưới 👇
         </div>
-      </div>
+      </div>` : `<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px;margin-bottom:18px;font-size:12px;color:#1d4ed8">
+        ✅ Bạn đã có API key. Nhập key mới để thay thế hoặc kiểm tra lại.
+      </div>`}
 
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px">Gemini API Key của bạn</label>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px">Gemini API Key</label>
         <div style="position:relative">
-          <input id="apiKeyInput" type="password" placeholder="AIzaSy..." 
-            style="width:100%;padding:12px 44px 12px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:monospace;outline:none;transition:border .2s"
+          <input id="apiKeyInput" type="password" placeholder="AIzaSy..."
+            style="width:100%;padding:11px 42px 11px 13px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;outline:none;color:#0f172a;transition:border-color .2s"
             value="${aiService.getKey()}"
-            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
-          <button onclick="const i=document.getElementById('apiKeyInput');i.type=i.type==='password'?'text':'password'" 
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px">👁</button>
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+          <button onclick="const i=document.getElementById('apiKeyInput');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁</button>
         </div>
       </div>
 
-      <div id="apiKeyStatus" style="margin-bottom:16px;font-size:12px;display:none"></div>
+      <div id="apiKeyStatus" style="display:none;border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;font-weight:500"></div>
 
-      <div style="display:flex;gap:10px">
-        <button onclick="document.getElementById('apiKeyModal').remove()" 
-          style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:10px;background:transparent;cursor:pointer;font-size:14px;font-weight:600">Hủy</button>
-        <button onclick="window._testAndSaveKey()" id="apiKeySaveBtn"
-          style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700">
-          🔑 Kiểm tra & Lưu key
+      <div style="display:flex;gap:8px;margin-bottom:${hasKey?'10px':'0'}">
+        <button onclick="document.getElementById('apiKeyModal').remove()"
+          style="flex:1;padding:11px;border:2px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#374151">Hủy</button>
+        <button onclick="window._doSaveKey()" id="apiKeySaveBtn"
+          style="flex:2;padding:11px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">
+          🔑 Kiểm tra & Lưu
         </button>
       </div>
-
-      ${aiService.hasKey() ? `<div style="text-align:center;margin-top:12px">
-        <button onclick="aiService.clearKey();document.getElementById('apiKeyModal').remove()" 
-          style="background:none;border:none;cursor:pointer;font-size:12px;color:#ef4444">🗑 Xóa key hiện tại</button>
-      </div>` : ''}
+      ${hasKey ? `<div style="text-align:center"><button onclick="aiService.clearKey();document.getElementById('apiKeyModal').remove();if(window._onKeySuccess)window._onKeySuccess()"
+        style="background:none;border:none;cursor:pointer;font-size:12px;color:#ef4444;padding:4px">🗑 Xóa key hiện tại</button></div>` : ''}
     </div>
-    <style>@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}</style>`;
+    <style>@keyframes kfSlideUp{from{opacity:0;transform:scale(.94) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}</style>`;
 
-  window._testAndSaveKey = async () => {
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  window._onKeySuccess = onSuccess;
+  window._doSaveKey = async () => {
     const key = document.getElementById('apiKeyInput').value.trim();
     const btn = document.getElementById('apiKeySaveBtn');
     const status = document.getElementById('apiKeyStatus');
-    if (!key || key.length < 10) { status.style.display='block'; status.style.color='#ef4444'; status.textContent='❌ Key không hợp lệ!'; return; }
-    btn.textContent = '⏳ Đang kiểm tra...'; btn.disabled = true;
-    status.style.display = 'none';
+    if (key.length < 20) {
+      status.style.display='block'; status.style.background='#fef2f2'; status.style.color='#dc2626';
+      status.textContent='❌ Key không hợp lệ (quá ngắn)'; return;
+    }
+    btn.innerHTML='<span style="display:inline-block;animation:spin .8s linear infinite">⏳</span> Đang kiểm tra...';
+    btn.disabled=true; status.style.display='none';
+    const prev = aiService.getKey();
     try {
       aiService.setKey(key);
-      await aiService.ask('Trả lời "OK" thôi.', 10);
-      status.style.display='block'; status.style.color='#16a34a'; status.textContent='✅ Key hợp lệ! Đã lưu thành công.';
-      btn.textContent='✅ Đã lưu!';
-      setTimeout(() => { modal.remove(); if(onSuccess) onSuccess(); }, 1200);
+      await aiService.ask('Nói "Xin chào" thôi.', 15);
+      status.style.display='block'; status.style.background='#f0fdf4'; status.style.color='#16a34a';
+      status.textContent='✅ Key hợp lệ! Đã lưu.';
+      btn.innerHTML='✅ Đã lưu!';
+      setTimeout(() => { modal.remove(); if(onSuccess) onSuccess(); }, 1000);
     } catch(e) {
-      aiService.clearKey();
-      status.style.display='block'; status.style.color='#ef4444';
-      status.textContent = e.message?.includes('API_KEY_INVALID')||e.message?.includes('400') ? '❌ Key sai hoặc không hợp lệ. Kiểm tra lại!' : `❌ Lỗi: ${e.message}`;
-      btn.textContent='🔑 Kiểm tra & Lưu key'; btn.disabled=false;
+      aiService.setKey(prev); // restore
+      status.style.display='block'; status.style.background='#fef2f2'; status.style.color='#dc2626';
+      if (e.message.includes('API_KEY_INVALID') || e.message.includes('400'))
+        status.textContent='❌ Key sai hoặc không hợp lệ. Vào aistudio.google.com tạo key mới!';
+      else if (e.message.includes('429') || e.message.includes('quota'))
+        status.textContent='⚠️ Key đúng nhưng hết quota. Thử lại sau hoặc dùng key khác.';
+      else
+        status.textContent='❌ ' + e.message.slice(0,100);
+      btn.innerHTML='🔑 Kiểm tra & Lưu'; btn.disabled=false;
     }
   };
-
+  document.head.insertAdjacentHTML('beforeend','<style>@keyframes spin{to{transform:rotate(360deg)}}</style>');
   document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('apiKeyInput')?.focus(), 100);
 }
