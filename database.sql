@@ -283,3 +283,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE friendships;
 ALTER PUBLICATION supabase_realtime ADD TABLE challenges;
 ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
 ALTER PUBLICATION supabase_realtime ADD TABLE game_players;
+
+-- Add is_public field to documents (run this if upgrading)
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_documents_public ON documents(is_public) WHERE is_public = TRUE;
+
+-- RPG stats are stored in localStorage, no DB needed

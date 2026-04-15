@@ -58,6 +58,9 @@
   <button class="mob-nav-item" onclick="app?.router?.navigate('/game')" data-route="/game">
     <span class="icon">⚔️</span><span>Game</span>
   </button>
+  <button class="mob-nav-item" onclick="app?.router?.navigate('/rpg')" data-route="/rpg">
+    <span class="icon">🗡️</span><span>RPG</span>
+  </button>
   <button class="mob-nav-item" onclick="app?.router?.navigate('/world')" data-route="/world">
     <span class="icon">🌍</span><span>World</span>
   </button>
@@ -131,6 +134,8 @@ import { FriendsPage }      from './src/pages/FriendsPage.js';
 import { AITutorPage }       from './src/pages/AITutorPage.js';
 import { NotificationSystem } from './src/components/NotificationSystem.js';
 import { WorldPage } from './src/pages/WorldPage.js';
+import { RPGPage } from './src/pages/RPGPage.js';
+import { CustomRoadmapPage } from './src/pages/CustomRoadmapPage.js';
 import { DashboardPage }   from './src/pages/DashboardPage.js';
 import { ChatPage }        from './src/pages/ChatPage.js';
 import { GamePage }        from './src/pages/GamePage.js';
@@ -241,6 +246,18 @@ async function boot() {
   lazyRoute('/documents',  './src/pages/DocumentsPage.js',  'DocumentsPage');
   lazyRoute('/pomodoro',   './src/pages/PomodoroPage.js',   'PomodoroPage');
   lazyRoute('/profile',    './src/pages/ProfilePage.js',    'ProfilePage', auth);
+
+  router.register('/rpg', () => {
+    buildShell();
+    showMobileUI(store.get('currentUser'));
+    new RPGPage(db, store, bus).render();
+  });
+
+  router.register('/custom-roadmap', () => {
+    buildShell();
+    showMobileUI(store.get('currentUser'));
+    new CustomRoadmapPage(db, store, bus).render();
+  });
 
   router.register('/world', () => {
     buildShell();

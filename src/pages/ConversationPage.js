@@ -167,6 +167,10 @@ export class ConversationPage {
     const input = document.getElementById('convInput');
     const text = input.value.trim();
     if (!text || this._loading) return;
+    if (!aiService.hasKey()) {
+      showAPIKeyModal(() => Toast.ok('Key đã lưu! Gửi lại tin nhắn nhé.'));
+      return;
+    }
 
     input.value = '';
     this._addMessage('user', text);

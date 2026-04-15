@@ -47,7 +47,13 @@ export class AITutorPage {
   manageKey() { showAPIKeyModal(()=>{ this.updateKeyStatus(); Toast.ok('AI đã được kích hoạt! 🎉'); }); }
 
   async _ensureKey() {
-    if(!aiService.hasKey()){ showAPIKeyModal(()=>{ this.updateKeyStatus(); }); return false; }
+    if(!aiService.hasKey()){
+      showAPIKeyModal(()=>{
+        this.updateKeyStatus();
+        Toast.ok('🎉 AI đã sẵn sàng! Thử lại nhé.');
+      });
+      return false;
+    }
     return true;
   }
 

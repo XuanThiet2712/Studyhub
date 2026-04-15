@@ -514,29 +514,66 @@ export class ChatPage {
     const me = this.store.get('currentUser');
     const isMe = msg.sender_id === me.id;
     const div = document.createElement('div');
-    div.style.cssText = `display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'}`;
-    const time = new Date(msg.created_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-    div.innerHTML = `<div style="max-width:72%;background:${isMe?'var(--blue)':'var(--bg2)'};color:${isMe?'white':'var(--text)'};padding:9px 13px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};font-size:13px;line-height:1.5">
-      ${msg.content}
-      <div style="font-size:10px;opacity:.6;margin-top:3px;text-align:right">${time}</div>
-    </div>`;
+    div.style.cssText = `display:flex;gap:8px;align-items:flex-end;${isMe?'flex-direction:row-reverse':''}`;
+    const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : 'Vừa xong';
+    const imgHtml = msg.image_url ? `<img src="${msg.image_url}" style="max-width:220px;border-radius:10px;margin-bottom:4px;display:block;cursor:zoom-in" onclick="window.open('${msg.image_url}','_blank')">` : '';
+    div.innerHTML = `
+      <div style="max-width:72%;background:${isMe?'linear-gradient(135deg,#3b82f6,#6366f1)':'var(--bg2)'};color:${isMe?'white':'var(--text)'};padding:${imgHtml?'8px':'9px 13px'};border-radius:${isMe?'18px 4px 18px 18px':'4px 18px 18px 18px'};font-size:13px;line-height:1.6;box-shadow:var(--shadow-sm)">
+        ${imgHtml}
+        ${msg.content ? `<span>${msg.content}</span>` : ''}
+        <div style="font-size:9px;opacity:.6;margin-top:4px;text-align:right">${time}</div>
+      </div>`;
     el.appendChild(div);
     if (!initial) el.scrollTop = el.scrollHeight;
-    if (initial && el.children.length === 1) el.scrollTop = el.scrollHeight;
+    if (el.childElementCount <= 2) el.scrollTop = el.scrollHeight;
   }
 
   async sendDM() {
     const input = document.getElementById('dmInput');
     const text = input?.value?.trim();
-    if (!text || !this._dmRoom) return;
+    const hasImg = this._dmPendingImg;
+    if (!text && !hasImg || !this._dmRoom) return;
     input.value = '';
     const me = this.store.get('currentUser');
     try {
-      const msg = await this.db.insert('chat_messages',{
-        sender_id: me.id, content: text, room: this._dmRoom
-      });
-      this._appendDMMsg({...msg, sender_id:me.id}, false);
+      let imageUrl = null;
+      if (this._dmPendingImg) {
+        imageUrl = await this.realtime.uploadChatImage(this._dmPendingImg);
+        this.clearDMImage();
+      }
+      const payload = { sender_id: me.id, content: text || '', room: this._dmRoom };
+      if (imageUrl) payload.image_url = imageUrl;
+      const msg = await this.db.insert('chat_messages', payload);
+      this._appendDMMsg({ ...msg, sender_id: me.id }, false);
       document.getElementById('dmMessages').scrollTop = 999999;
     } catch(e) { Toast.err('Lỗi gửi tin: ' + e.message); }
+  }
+
+  toggleDMEmoji() {
+    const p = document.getElementById('dmEmojiPicker');
+    if (p) p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+  }
+  insertDMEmoji(e) {
+    const i = document.getElementById('dmInput');
+    if (i) { i.value += e; i.focus(); }
+    const p = document.getElementById('dmEmojiPicker');
+    if (p) p.style.display = 'none';
+  }
+  onDMImageSelected(evt) {
+    const file = evt.target.files[0]; if (!file) return;
+    this._dmPendingImg = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const thumb = document.getElementById('dmImgThumb');
+      const wrap  = document.getElementById('dmImgPreview');
+      if (thumb) thumb.src = e.target.result;
+      if (wrap)  wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+  clearDMImage() {
+    this._dmPendingImg = null;
+    const wrap = document.getElementById('dmImgPreview');
+    if (wrap) wrap.style.display = 'none';
   }
 }

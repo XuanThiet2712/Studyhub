@@ -5,7 +5,7 @@ const TYPE_COLORS={video:'#3b82f6',pdf:'#ef4444',link:'#f97316',note:'#22c55e'};
 const TYPE_ICONS ={video:'🎬',pdf:'📄',link:'🔗',note:'📝'};
 
 export class DocumentsPage {
-  constructor(db,store,bus){this.db=db;this.store=store;this.bus=bus;this._docs=[];this._filter='all';this._folder='all';this._folders=[];}
+  constructor(db,store,bus){this.db=db;this.store=store;this.bus=bus;this._docs=[];this._publicDocs=[];this._filter='all';this._folder='all';this._folders=[];this._scope='mine';}
   render(){
     document.querySelector('.main').innerHTML=`
     <div class="page">
@@ -63,6 +63,10 @@ export class DocumentsPage {
         <div class="form-group"><label class="form-label">Link (YouTube/Drive/Mediafire...)</label><input class="form-input" id="dUrl" type="url" placeholder="https://..."></div>
         <div class="form-group"><label class="form-label">Mô tả</label><textarea class="form-textarea" id="dDesc" rows="2" placeholder="Nội dung, chương, chủ đề..."></textarea></div>
         <div class="form-group"><label class="form-label">Tags (phân cách bằng dấu phẩy)</label><input class="form-input" id="dTags" placeholder="chương 5, quan trọng, thi cuối kỳ"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--blue-l);border-radius:var(--r-md);margin-bottom:14px">
+          <input type="checkbox" id="dPublic" style="width:18px;height:18px;cursor:pointer">
+          <div><div style="font-size:13px;font-weight:600">🌐 Chia sẻ công khai</div><div style="font-size:11px;color:var(--muted)">Mọi người trong cộng đồng đều thấy tài liệu này</div></div>
+        </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" onclick="document.getElementById('addDocModal').classList.remove('open')">Hủy</button>
           <button class="btn btn-primary" onclick="docsPage.saveDoc()">💾 Lưu</button>
@@ -151,6 +155,55 @@ export class DocumentsPage {
     this._renderFolders(); this.renderDocs();
   }
 
+  async loadPublicDocs(){
+    try{
+      const { data } = await this.db.client.from('documents').select('*,profiles!documents_user_id_fkey(display_name,avatar_id)').eq('is_public',true).order('created_at',{ascending:false}).limit(50);
+      this._publicDocs = data||[];
+    }catch(e){this._publicDocs=[];}
+    this.renderPublicDocs();
+  }
+
+  setScope(scope,btn){
+    this._scope=scope;
+    document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(scope==='public'){this.loadPublicDocs();}
+    else this.renderDocs();
+  }
+
+  renderPublicDocs(){
+    // Hide folders/filters for public
+    document.getElementById('folderList').parentElement.style.display=this._scope==='mine'?'block':'none';
+    document.getElementById('vp-filters')?.style && (document.getElementById('vp-filters').style.display=this._scope==='mine'?'flex':'none');
+    const grid=document.getElementById('docsGrid'),empty=document.getElementById('docsEmpty');
+    if(!grid)return;
+    if(!this._publicDocs.length){grid.innerHTML='';empty.style.display='block';empty.querySelector('.empty-text').textContent='Chưa có tài liệu cộng đồng nào';return;}
+    empty.style.display='none';
+    const tc={video:'#3b82f6',pdf:'#ef4444',link:'#f97316',note:'#22c55e'};
+    const ti={video:'🎬',pdf:'📄',link:'🔗',note:'📝'};
+    grid.innerHTML=this._publicDocs.map(d=>{
+      const c=tc[d.doc_type]||'#3b82f6';
+      return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-sm)';this.style.transform=''">
+        <div style="height:4px;background:${c}"></div>
+        <div style="padding:14px 16px;flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${c}15;color:${c};font-weight:600">${ti[d.doc_type]||'📄'} ${(d.doc_type||'link').toUpperCase()}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:auto">${d.subject||'Chung'}</span>
+          </div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:5px">${d.title}</div>
+          ${d.description?`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${d.description.slice(0,80)}${d.description.length>80?'…':''}</div>`:''}
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <span style="font-size:11px;color:var(--muted)">👤 ${d.profiles?.display_name||'Ẩn danh'}</span>
+            <span style="font-size:11px;color:var(--muted2);margin-left:auto">${new Date(d.created_at).toLocaleDateString('vi-VN')}</span>
+          </div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid var(--border);background:var(--bg2)">
+          ${d.url?`<a href="${d.url}" target="_blank" class="btn btn-primary btn-sm" style="width:100%;justify-content:center">🔗 Mở tài liệu</a>`:'<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">Không có link</div>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   setFilter(f,btn){
     this._filter=f;
     document.querySelectorAll('.type-filter-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--muted)';});
@@ -226,7 +279,8 @@ export class DocumentsPage {
       subject:document.getElementById('dSubj').value||'Chung',
       url:document.getElementById('dUrl').value.trim(),
       description:document.getElementById('dDesc').value.trim(),
-      tags:document.getElementById('dTags').value.split(',').map(t=>t.trim()).filter(Boolean)
+      tags:document.getElementById('dTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+      is_public:document.getElementById('dPublic')?.checked||false,
     };
     try {
       if(editId){
