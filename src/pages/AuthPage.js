@@ -1,31 +1,29 @@
-import { AvatarPicker, Toast } from '../components/index.js';
+import { Toast } from '../components/index.js';
 
 export class AuthPage {
-  constructor(authService, router) {
-    this.auth   = authService;
-    this.router = router;
-    this._picker= null;
-  }
+  constructor(auth, router) { this.auth=auth; this.router=router; this._tab='login'; }
 
   render() {
-    document.getElementById('app').innerHTML = `
+    // Remove existing page structure - auth doesn't use sidebar
+    const app = document.getElementById('app');
+    app.innerHTML = `
     <div class="auth-page">
-      <div class="auth-card">
-
+      <div class="auth-card anim-slide">
+        <!-- Logo -->
         <div class="auth-logo">
-          <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div class="logo-mark" style="width:44px;height:44px;font-size:20px;border-radius:12px">S</div>
-            <div class="logo-text" style="font-size:26px">StudyHub</div>
-          </div>
-          <p style="font-size:13px;color:var(--muted)">TOEIC 600+ · Học thông minh · Cộng đồng</p>
+          <div class="auth-logo-mark">S</div>
+          <div class="auth-title">StudyHub</div>
+          <div class="auth-sub">TOEIC 600+ · Học thông minh · Cộng đồng</div>
         </div>
 
-        <!-- TABS -->
-        <div style="display:flex;border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:24px">
-          <button id="tabLogin" onclick="authPage.showLogin()" style="flex:1;padding:10px;border:none;background:var(--blue);color:white;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">
+        <!-- Tabs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg2);border-radius:var(--r-lg);padding:4px;margin-bottom:24px;border:1px solid var(--border2)">
+          <button id="loginTab" onclick="authPage.switchTab('login')"
+            style="padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:white;color:var(--blue);box-shadow:var(--shadow-xs)">
             Đăng nhập
           </button>
-          <button id="tabReg" onclick="authPage.showRegister()" style="flex:1;padding:10px;border:none;background:var(--white);color:var(--muted);font-family:var(--font);font-size:13px;cursor:pointer">
+          <button id="registerTab" onclick="authPage.switchTab('register')"
+            style="padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--muted)">
             Đăng ký
           </button>
         </div>
@@ -34,155 +32,123 @@ export class AuthPage {
         <div id="loginForm">
           <div class="form-group">
             <label class="form-label">Tên đăng nhập</label>
-            <input class="form-input" id="loginUser" placeholder="username" autocomplete="username">
+            <input class="form-input" id="loginUser" placeholder="username" autocomplete="username"
+              onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
           </div>
           <div class="form-group">
             <label class="form-label">Mật khẩu</label>
             <div style="position:relative">
               <input class="form-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"
+                style="padding-right:40px"
                 onkeydown="if(event.key==='Enter')authPage.login()">
-              <button onclick="authPage.togglePw('loginPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted)">👁</button>
+              <button onclick="const i=document.getElementById('loginPass');i.type=i.type==='password'?'text':'password'"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted)">👁</button>
             </div>
           </div>
-          <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;justify-content:center" onclick="authPage.login()">
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;font-size:14px;margin-bottom:14px" onclick="authPage.login()" id="loginBtn">
             Đăng nhập →
           </button>
-          <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted)">
-            Chưa có tài khoản? <span style="color:var(--blue);cursor:pointer" onclick="authPage.showRegister()">Đăng ký ngay</span>
+          <div style="text-align:center;font-size:12px;color:var(--muted)">
+            Chưa có tài khoản? <a href="#" onclick="authPage.switchTab('register');return false" style="color:var(--blue);font-weight:600">Đăng ký ngay</a>
           </div>
         </div>
 
-        <!-- REGISTER FORM (hidden) -->
+        <!-- REGISTER FORM -->
         <div id="registerForm" style="display:none">
-          <!-- Avatar picker -->
-          <div style="margin-bottom:16px">
-            <label class="form-label">Chọn Avatar 👇</label>
-            <div id="avatarPickerWrap"></div>
+          <div class="form-group">
+            <label class="form-label">Tên đăng nhập *</label>
+            <input class="form-input" id="regUser" placeholder="Ít nhất 3 ký tự" autocomplete="username"
+              onkeydown="if(event.key==='Enter')document.getElementById('regName').focus()">
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Họ và tên *</label>
-              <input class="form-input" id="regName" placeholder="Nguyễn Văn A">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Giới tính</label>
-              <select class="form-select" id="regGender">
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-                <option value="other">Khác</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label class="form-label">Tên hiển thị *</label>
+            <input class="form-input" id="regName" placeholder="Tên của bạn"
+              onkeydown="if(event.key==='Enter')document.getElementById('regPass').focus()">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Tên đăng nhập *</label>
-              <input class="form-input" id="regUser" placeholder="username (≥3 ký tự)" autocomplete="off">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Ngày sinh</label>
-              <input class="form-input" type="date" id="regBirth">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu *</label>
+            <div style="position:relative">
+              <input class="form-input" id="regPass" type="password" placeholder="Ít nhất 6 ký tự"
+                style="padding-right:40px"
+                onkeydown="if(event.key==='Enter')authPage.register()">
+              <button onclick="const i=document.getElementById('regPass');i.type=i.type==='password'?'text':'password'"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted)">👁</button>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Mật khẩu *</label>
-              <input class="form-input" type="password" id="regPass" placeholder="••••••••" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Xác nhận mật khẩu *</label>
-              <input class="form-input" type="password" id="regPass2" placeholder="••••••••" autocomplete="new-password">
-            </div>
-          </div>
-
-          <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;justify-content:center;margin-top:4px" onclick="authPage.register()">
-            Tạo tài khoản 🎉
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;font-size:14px;margin-bottom:14px" onclick="authPage.register()" id="registerBtn">
+            Tạo tài khoản ✓
           </button>
-          <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)">
-            Đã có tài khoản? <span style="color:var(--blue);cursor:pointer" onclick="authPage.showLogin()">Đăng nhập</span>
+          <div style="text-align:center;font-size:12px;color:var(--muted)">
+            Đã có tài khoản? <a href="#" onclick="authPage.switchTab('login');return false" style="color:var(--blue);font-weight:600">Đăng nhập</a>
           </div>
         </div>
 
+        <!-- Status message -->
+        <div id="authMsg" style="display:none;margin-top:12px;padding:10px 13px;border-radius:var(--r-md);font-size:12px;font-weight:500;text-align:center"></div>
       </div>
     </div>`;
-
     window.authPage = this;
-    this._initAvatarPicker();
+    setTimeout(() => document.getElementById('loginUser')?.focus(), 100);
   }
 
-  showLogin() {
-    document.getElementById('loginForm').style.display    = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('tabLogin').style.background  = 'var(--blue)';
-    document.getElementById('tabLogin').style.color       = 'white';
-    document.getElementById('tabReg').style.background    = 'var(--white)';
-    document.getElementById('tabReg').style.color         = 'var(--muted)';
+  switchTab(tab) {
+    this._tab = tab;
+    const isLogin = tab === 'login';
+    document.getElementById('loginForm').style.display  = isLogin ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+    const lt = document.getElementById('loginTab'), rt = document.getElementById('registerTab');
+    if (isLogin) {
+      lt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;background:white;color:var(--blue);box-shadow:var(--shadow-xs)';
+      rt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted)';
+      setTimeout(() => document.getElementById('loginUser')?.focus(), 50);
+    } else {
+      rt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;background:white;color:var(--blue);box-shadow:var(--shadow-xs)';
+      lt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted)';
+      setTimeout(() => document.getElementById('regUser')?.focus(), 50);
+    }
+    this._setMsg('');
   }
 
-  showRegister() {
-    document.getElementById('loginForm').style.display    = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-    document.getElementById('tabReg').style.background    = 'var(--blue)';
-    document.getElementById('tabReg').style.color         = 'white';
-    document.getElementById('tabLogin').style.background  = 'var(--white)';
-    document.getElementById('tabLogin').style.color       = 'var(--muted)';
-    this._initAvatarPicker();
-  }
-
-  _initAvatarPicker() {
-    const wrap = document.getElementById('avatarPickerWrap');
-    if (!wrap || this._picker) return;
-    this._picker = new AvatarPicker('avatarPickerWrap', 1);
-    this._picker.render();
+  _setMsg(msg, isErr=true) {
+    const el = document.getElementById('authMsg');
+    if (!el) return;
+    if (!msg) { el.style.display='none'; return; }
+    el.style.display='block';
+    el.style.background = isErr ? 'var(--red-l)' : 'var(--green-l)';
+    el.style.color       = isErr ? 'var(--red)'   : 'var(--green)';
+    el.style.border      = isErr ? '1px solid rgba(244,63,94,.2)' : '1px solid rgba(16,185,129,.2)';
+    el.textContent = msg;
   }
 
   async login() {
-    const username = document.getElementById('loginUser').value.trim();
-    const password = document.getElementById('loginPass').value;
-    if (!username || !password) { Toast.err('Nhập đủ thông tin!'); return; }
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    if (!user || !pass) { this._setMsg('Nhập đủ username và mật khẩu!'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.textContent='⏳ Đang đăng nhập...'; btn.disabled=true;
     try {
-      this._setLoading(true);
-      await this.auth.login(username, password);
-      Toast.ok('Đăng nhập thành công!');
-      this.router.navigate('/dashboard');
+      await this.auth.login(user, pass);
     } catch(e) {
-      Toast.err(e.message || 'Đăng nhập thất bại!');
-    } finally { this._setLoading(false); }
+      this._setMsg(e.message.includes('Invalid')||e.message.includes('incorrect')||e.message.includes('không') ? '❌ Sai username hoặc mật khẩu' : '❌ ' + e.message);
+      btn.textContent='Đăng nhập →'; btn.disabled=false;
+    }
   }
 
   async register() {
-    const displayName = document.getElementById('regName').value.trim();
-    const username    = document.getElementById('regUser').value.trim().toLowerCase();
-    const gender      = document.getElementById('regGender').value;
-    const birthDate   = document.getElementById('regBirth').value;
-    const password    = document.getElementById('regPass').value;
-    const password2   = document.getElementById('regPass2').value;
-    const avatarId    = this._picker?.getValue() || 1;
-
-    if (!displayName)          { Toast.err('Nhập họ tên!'); return; }
-    if (username.length < 3)   { Toast.err('Tên đăng nhập ≥ 3 ký tự!'); return; }
-    if (!/^[a-z0-9_]+$/.test(username)) { Toast.err('Tên đăng nhập chỉ dùng a-z, 0-9, _'); return; }
-    if (password.length < 6)   { Toast.err('Mật khẩu ≥ 6 ký tự!'); return; }
-    if (password !== password2) { Toast.err('Mật khẩu không khớp!'); return; }
-
+    const user = document.getElementById('regUser').value.trim();
+    const name = document.getElementById('regName').value.trim();
+    const pass = document.getElementById('regPass').value;
+    if (!user||!name||!pass) { this._setMsg('Điền đầy đủ thông tin!'); return; }
+    if (user.length < 3) { this._setMsg('Username tối thiểu 3 ký tự'); return; }
+    if (pass.length < 6) { this._setMsg('Mật khẩu tối thiểu 6 ký tự'); return; }
+    const btn = document.getElementById('registerBtn');
+    btn.textContent='⏳ Đang tạo...'; btn.disabled=true;
     try {
-      this._setLoading(true);
-      await this.auth.register({ username, password, displayName, gender, birthDate: birthDate||null, avatarId });
-      Toast.ok('Tạo tài khoản thành công! 🎉');
-      this.router.navigate('/dashboard');
+      await this.auth.register(user, pass, name);
+      this._setMsg('✅ Đăng ký thành công! Đang chuyển hướng...', false);
     } catch(e) {
-      Toast.err(e.message || 'Đăng ký thất bại!');
-    } finally { this._setLoading(false); }
-  }
-
-  togglePw(inputId, btn) {
-    const input = document.getElementById(inputId);
-    if (input.type === 'password') { input.type='text'; btn.textContent='🙈'; }
-    else { input.type='password'; btn.textContent='👁'; }
-  }
-
-  _setLoading(on) {
-    const btns = document.querySelectorAll('.auth-card .btn');
-    btns.forEach(b => { b.disabled = on; b.style.opacity = on ? '.6' : '1'; });
+      this._setMsg(e.message.includes('unique')||e.message.includes('exists') ? '❌ Username đã tồn tại' : '❌ ' + e.message);
+      btn.textContent='Tạo tài khoản ✓'; btn.disabled=false;
+    }
   }
 }

@@ -52,7 +52,7 @@ export class ProfilePage {
           <div class="card-title">✏️ Chỉnh sửa hồ sơ</div>
           <div style="margin-bottom:14px">
             <div class="form-label" style="margin-bottom:8px">Avatar</div>
-            <div id="profileAvaPicker"></div>
+            <div id="profileAvaPicker" style="max-height:160px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--r-md);padding:8px"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Tên hiển thị</label>

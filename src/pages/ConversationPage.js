@@ -5,6 +5,66 @@ async function callGemini(systemPrompt, messages) {
   return aiService.call(systemPrompt, messages, 800);
 }
 
+
+const SCENARIOS = [
+  {
+    id:'job_interview', emoji:'💼', title:'Phỏng vấn xin việc',
+    subtitle:'HR Manager phỏng vấn bạn vào vị trí ứng tuyển',
+    level:'B1-B2', levelColor:'#4f6ef7',
+    vocab:['experience','qualification','strength','weakness','opportunity'],
+    systemPrompt:`You are a professional HR Manager conducting a job interview in English. Ask realistic interview questions about experience, skills, strengths/weaknesses. After each user response, briefly comment on their English in Vietnamese as [NOTE: ...]. Keep responses under 60 words. Be encouraging but professional.`
+  },
+  {
+    id:'hotel', emoji:'🏨', title:'Check-in khách sạn',
+    subtitle:'Nhân viên lễ tân xử lý đặt phòng và yêu cầu',
+    level:'A2-B1', levelColor:'#10b981',
+    vocab:['reservation','room type','amenities','check-in','floor'],
+    systemPrompt:`You are a friendly hotel receptionist. Handle check-in, room requests, amenities questions. Create small realistic challenges (fully booked standard room, upgrade offer). After each response add [NOTE: Vietnamese tip about useful phrase]. Under 60 words.`
+  },
+  {
+    id:'restaurant', emoji:'🍽️', title:'Gọi món nhà hàng',
+    subtitle:'Phục vụ nhà hàng Tây giúp bạn chọn món',
+    level:'A2', levelColor:'#f59e0b',
+    vocab:['menu','recommend','allergic','well-done','dessert'],
+    systemPrompt:`You are a waiter at an upscale English restaurant. Take orders, describe dishes, handle special requests. Add [NOTE: useful restaurant phrase in Vietnamese] after each exchange. Under 60 words. Be warm and helpful.`
+  },
+  {
+    id:'airport', emoji:'✈️', title:'Sân bay & Du lịch',
+    subtitle:'Nhân viên sân bay hỗ trợ check-in, cổng lên máy bay',
+    level:'B1', levelColor:'#f97316',
+    vocab:['boarding pass','departure gate','baggage claim','delay','transit'],
+    systemPrompt:`You are an airport staff member (check-in counter). Help passenger with check-in, baggage, gate info. Create situations like delays or seat problems. Add [NOTE: airport vocabulary tip in Vietnamese]. Under 60 words.`
+  },
+  {
+    id:'shopping', emoji:'🛒', title:'Mua sắm & Đàm phán',
+    subtitle:'Nhân viên cửa hàng tư vấn và xử lý giao dịch',
+    level:'A2-B1', levelColor:'#ec4899',
+    vocab:['discount','exchange','receipt','size','fit'],
+    systemPrompt:`You are a shop assistant in a mall. Help customer find items, suggest alternatives, handle returns. Add [NOTE: useful shopping phrase in Vietnamese]. Under 60 words.`
+  },
+  {
+    id:'meeting', emoji:'📊', title:'Cuộc họp kinh doanh',
+    subtitle:'Đối tác kinh doanh thảo luận dự án và hợp đồng',
+    level:'B2', levelColor:'#8b5cf6',
+    vocab:['agenda','proposal','deadline','negotiate','agreement'],
+    systemPrompt:`You are a business partner in a meeting. Discuss project proposals, budgets, timelines. Agree, disagree professionally, ask clarifying questions. Add [NOTE: business English tip in Vietnamese]. Under 70 words.`
+  },
+  {
+    id:'free_talk', emoji:'💬', title:'Nói chuyện tự do',
+    subtitle:'Trò chuyện thoải mái về bất kỳ chủ đề nào',
+    level:'All levels', levelColor:'#14b8a6',
+    vocab:['opinion','agree','disagree','for example','in my view'],
+    systemPrompt:`You are a friendly English conversation partner. Chat naturally about any topic the user brings up. Gently correct major grammar errors and suggest better phrases. Add [NOTE: correction or better phrasing in Vietnamese]. Keep it natural and encouraging. Under 70 words.`
+  },
+  {
+    id:'doctor', emoji:'🏥', title:'Gặp bác sĩ',
+    subtitle:'Khám bệnh tại phòng khám tiếng Anh',
+    level:'B1', levelColor:'#ef4444',
+    vocab:['symptom','prescription','appointment','diagnose','medication'],
+    systemPrompt:`You are a friendly doctor conducting a consultation in English. Ask about symptoms, medical history. Give simple medical advice. Add [NOTE: medical vocabulary tip in Vietnamese]. Under 60 words.`
+  },
+];
+
 export class ConversationPage {
   constructor(db, store, bus) {
     this.db = db; this.store = store; this.bus = bus;

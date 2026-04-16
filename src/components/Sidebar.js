@@ -82,6 +82,12 @@ export class Sidebar {
       <div class="online-dot"></div>
     </div>
 
+    <!-- CONNECTION STATUS - visible wifi indicator -->
+    <div id="sidebarConn" class="conn-indicator online" style="cursor:default">
+      <div class="conn-dot online" id="sidebarConnDot"></div>
+      <span id="sidebarConnText">Đang kết nối...</span>
+      <span id="sidebarPingText" style="margin-left:auto;font-family:var(--mono);font-size:10px;opacity:.7"></span>
+    </div>
     <div class="sidebar-stats">
       <div class="ss-item"><div class="ss-val" style="color:var(--blue)">${roadmapDone}</div><div class="ss-lbl">Ngày</div></div>
       <div class="ss-item"><div class="ss-val" style="color:var(--purple)" id="sb-vocab-cnt">0</div><div class="ss-lbl">Từ</div></div>
@@ -142,6 +148,28 @@ export class Sidebar {
   }
 
   _watchNetwork() {
+    // Update the connection indicator
+    const updateConn = (online, ms) => {
+      const el   = document.getElementById('sidebarConn');
+      const dot  = document.getElementById('sidebarConnDot');
+      const text = document.getElementById('sidebarConnText');
+      const ping = document.getElementById('sidebarPingText');
+      if (!el) return;
+      if (online) {
+        el.className='conn-indicator online';
+        if(dot){dot.className='conn-dot online';}
+        if(text) text.textContent='Đang online';
+        if(ping&&ms) ping.textContent=ms+'ms';
+      } else {
+        el.className='conn-indicator offline';
+        if(dot){dot.className='conn-dot offline';}
+        if(text) text.textContent='Mất kết nối';
+        if(ping) ping.textContent='';
+      }
+    };
+    this._updateConn = updateConn;
+  }
+  _watchNetwork_orig() {
     const update = (online) => {
       const el = document.getElementById('netStatus');
       const lbl = document.getElementById('netStatus')?.querySelector('.net-label');
