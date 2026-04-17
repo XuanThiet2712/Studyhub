@@ -82,11 +82,11 @@ export class Sidebar {
       <div class="online-dot"></div>
     </div>
 
-    <!-- CONNECTION STATUS - visible wifi indicator -->
-    <div id="sidebarConn" class="conn-indicator online" style="cursor:default">
-      <div class="conn-dot online" id="sidebarConnDot"></div>
-      <span id="sidebarConnText">Đang kết nối...</span>
-      <span id="sidebarPingText" style="margin-left:auto;font-family:var(--mono);font-size:10px;opacity:.7"></span>
+    <!-- NETWORK STATUS — most prominent position, just below logo -->
+    <div id="netWidget" class="net-widget online">
+      <div class="net-dot online" id="netDot"></div>
+      <span class="net-label" id="netLabel">Đang kết nối...</span>
+      <span class="net-ping" id="netPing"></span>
     </div>
     <div class="sidebar-stats">
       <div class="ss-item"><div class="ss-val" style="color:var(--blue)">${roadmapDone}</div><div class="ss-lbl">Ngày</div></div>
@@ -113,11 +113,6 @@ export class Sidebar {
     </nav>
 
     <div class="sidebar-footer">
-      <div id="netStatus" class="net-status ${navigator.onLine ? 'net-online' : 'net-offline'}">
-        <span class="net-dot"></span>
-        <span class="net-label">${navigator.onLine ? 'Đã kết nối' : 'Mất mạng'}</span>
-        <span class="net-ping" id="netPing"></span>
-      </div>
       <button class="logout-btn" onclick="app.services.auth.logout()">
         🚪 Đăng xuất
       </button>
@@ -148,61 +143,31 @@ export class Sidebar {
   }
 
   _watchNetwork() {
-    // Update the connection indicator
-    const updateConn = (online, ms) => {
-      const el   = document.getElementById('sidebarConn');
-      const dot  = document.getElementById('sidebarConnDot');
-      const text = document.getElementById('sidebarConnText');
-      const ping = document.getElementById('sidebarPingText');
-      if (!el) return;
-      if (online) {
-        el.className='conn-indicator online';
-        if(dot){dot.className='conn-dot online';}
-        if(text) text.textContent='Đang online';
-        if(ping&&ms) ping.textContent=ms+'ms';
-      } else {
-        el.className='conn-indicator offline';
-        if(dot){dot.className='conn-dot offline';}
-        if(text) text.textContent='Mất kết nối';
-        if(ping) ping.textContent='';
-      }
+    const updateNet = (online, ms) => {
+      const w=document.getElementById('netWidget');
+      const d=document.getElementById('netDot');
+      const l=document.getElementById('netLabel');
+      const p=document.getElementById('netPing');
+      if(!w) return;
+      w.className='net-widget '+(online?'online':'offline');
+      if(d) d.className='net-dot '+(online?'online':'offline');
+      if(l) l.textContent=online?'Đang kết nối':'Mất kết nối';
+      if(p) { p.textContent=online&&ms?ms+'ms':''; if(ms){ p.style.color=ms<100?'#0fba81':ms<300?'#f5a623':'#f5365c'; } }
     };
-    this._updateConn = updateConn;
-  }
-  _watchNetwork_orig() {
-    const update = (online) => {
-      const el = document.getElementById('netStatus');
-      const lbl = document.getElementById('netStatus')?.querySelector('.net-label');
-      if (!el) return;
-      el.className = 'net-status ' + (online ? 'net-online' : 'net-offline');
-      if (lbl) lbl.textContent = online ? 'Đã kết nối' : 'Mất mạng';
-      if (!online) {
-        const ping = document.getElementById('netPing');
-        if (ping) ping.textContent = '';
-      }
+    this._updateNet=updateNet;
+    // Ping check
+    const ping=async()=>{
+      if(!navigator.onLine){updateNet(false);return;}
+      try{
+        const t=performance.now();
+        await fetch('https://www.google.com/favicon.ico?_='+Date.now(),{mode:'no-cors',cache:'no-store'});
+        updateNet(true,Math.round(performance.now()-t));
+      }catch{updateNet(false);}
     };
-    this._onOnline  = () => { update(true);  this._measurePing(); };
-    this._onOffline = () => update(false);
-    window.addEventListener('online',  this._onOnline);
-    window.addEventListener('offline', this._onOffline);
-    // Measure ping every 30s
-    this._measurePing();
-    this._pingInterval = setInterval(() => this._measurePing(), 30000);
-  }
-
-  async _measurePing() {
-    const pingEl = document.getElementById('netPing');
-    if (!pingEl || !navigator.onLine) return;
-    try {
-      const t0 = performance.now();
-      await fetch('https://www.google.com/favicon.ico?_=' + Date.now(), { mode: 'no-cors', cache: 'no-store' });
-      const ms = Math.round(performance.now() - t0);
-      pingEl.textContent = ms + 'ms';
-      // Color-code ping
-      pingEl.style.color = ms < 100 ? 'var(--green)' : ms < 300 ? 'var(--orange)' : 'var(--red)';
-    } catch {
-      pingEl.textContent = '';
-    }
+    ping();
+    this._pingInt=setInterval(ping,30000);
+    window.addEventListener('online',()=>ping());
+    window.addEventListener('offline',()=>updateNet(false));
   }
 
   destroy() {

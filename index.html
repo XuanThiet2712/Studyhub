@@ -106,10 +106,8 @@ function showMobileUI(user) {
   document.getElementById('mobileTopbar').style.display = isMobile ? 'flex' : 'none';
   document.getElementById('mobileBottomNav').style.display = isMobile ? 'flex' : 'none';
   if (user) {
-    const ava = document.getElementById('mobileTopbarAvatar');
-    if (ava && user.avatar_id) {
-      ava.innerHTML = '<img src="'+window._avatarUrl(user.avatar_id)+'" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--border)">';
-    }
+    const img = document.getElementById('mobileAvaImg');
+    if (img) img.src = window._avatarUrl(user.avatar_id||1);
   }
 }
 function hideMobileUI() {

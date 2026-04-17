@@ -144,7 +144,7 @@ export class AuthPage {
     const btn = document.getElementById('registerBtn');
     btn.textContent='⏳ Đang tạo...'; btn.disabled=true;
     try {
-      await this.auth.register(user, pass, name);
+      await this.auth.register({ username:user, password:pass, displayName:name, gender:'other', avatarId:1 });
       this._setMsg('✅ Đăng ký thành công! Đang chuyển hướng...', false);
     } catch(e) {
       this._setMsg(e.message.includes('unique')||e.message.includes('exists') ? '❌ Username đã tồn tại' : '❌ ' + e.message);
