@@ -18,12 +18,12 @@ export class DashboardPage {
       <!-- HERO -->
       <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;margin-bottom:28px">
         <div>
-          <h1 style="font-family:var(--serif);font-size:28px;font-weight:700;margin-bottom:6px">
-            Xin chào, <span style="color:var(--blue)">${user.displayName}</span> 👋
+          <h1 class="page-title" style="margin-bottom:6px">
+            Xin chào, <span style="background:var(--accent-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${user.displayName}</span>
           </h1>
-          <p style="font-size:14px;color:var(--muted)">
-            <em style="font-style:italic;color:var(--blue-d)">"Just do it first."</em>
-            &nbsp;— Hôm nay học gì chưa?
+          <p class="page-desc">
+            <em style="font-style:italic;color:var(--indigo)">"Just do it first."</em>
+            — Hôm nay học gì chưa?
           </p>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="app.router.navigate('/roadmap')">📅 Vào học ngay →</button>
@@ -32,17 +32,15 @@ export class DashboardPage {
           </div>
         </div>
 
-        <!-- Hinata Zone -->
-        <div class="hinata-zone" style="width:180px" id="hinataZone">
-          <div style="background:linear-gradient(135deg,var(--blue-l),var(--purple-l));padding:16px;text-align:center;border-radius:var(--r-xl);border:2px dashed var(--border2)">
-            <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">✨ HINATA ZONE</div>
-            <img id="hinataImg" src="" alt="Hinata Hyuga" style="width:140px;height:140px;object-fit:cover;border-radius:var(--r-lg);display:none" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div id="hinataPlaceholder" style="width:140px;height:140px;background:var(--purple-l);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed rgba(139,92,246,.3)" onclick="dashPage.uploadHinata()">
-              <div style="font-size:32px">🌸</div>
-              <div style="font-size:11px;color:var(--purple);margin-top:6px">Nhấp để thêm ảnh</div>
-              <div style="font-size:10px;color:var(--muted)">Hinata Hyuga</div>
+        <!-- Photo Zone -->
+        <div style="width:172px;flex-shrink:0" id="hinataZone">
+          <div style="background:var(--surface);border:1px solid var(--border);padding:14px;text-align:center;border-radius:var(--r-xl);box-shadow:var(--shadow-xs)">
+            <div style="font-size:10px;color:var(--faint);font-family:var(--mono);margin-bottom:10px;letter-spacing:0.8px;text-transform:uppercase">Photo</div>
+            <img id="hinataImg" src="" alt="" style="width:140px;height:140px;object-fit:cover;border-radius:var(--r-lg);display:none;cursor:pointer" onclick="dashPage.uploadHinata()" onerror="this.style.display='none';document.getElementById('hinataPlaceholder').style.display='flex'">
+            <div id="hinataPlaceholder" style="width:140px;height:140px;background:var(--bg2);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px dashed var(--border2)" onclick="dashPage.uploadHinata()">
+              <div style="font-size:24px;opacity:.4">+</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px">Thêm ảnh</div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:var(--mono)">Hinata Hyuga 💜</div>
             <input type="file" id="hinataInput" accept="image/*" style="display:none" onchange="dashPage.setHinata(this)">
           </div>
         </div>

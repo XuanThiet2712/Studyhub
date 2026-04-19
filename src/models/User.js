@@ -22,25 +22,30 @@ export class User {
   get xpToNext()    { return this.level * 100 - this.xp % (this.level * 100); }
   get levelPct()    { return Math.round((this.xp % (this.level*100)) / (this.level) ); }
 
-  // Inline SVG avatars — no external dependencies, no CORS issues
+  // Mature professional monogram avatars
   static avatarUrl(id) {
     const n = ((id || 1) - 1) % 20;
-    const colors = [
-      ['#4f6ef7','#c7d2fe'],['#10b981','#a7f3d0'],['#f97316','#fed7aa'],
-      ['#8b5cf6','#ddd6fe'],['#ec4899','#fce7f3'],['#14b8a6','#ccfbf1'],
-      ['#f59e0b','#fde68a'],['#ef4444','#fecaca'],['#06b6d4','#cffafe'],
-      ['#6366f1','#e0e7ff'],['#84cc16','#ecfccb'],['#f43f5e','#ffe4e6'],
-      ['#0ea5e9','#e0f2fe'],['#a855f7','#f3e8ff'],['#22c55e','#dcfce7'],
-      ['#fb923c','#ffedd5'],['#e879f9','#fae8ff'],['#2dd4bf','#f0fdfa'],
-      ['#facc15','#fef9c3'],['#38bdf8','#e0f2fe']
+    const palettes = [
+      ['#1e3a5f','#dce8f2'],['#2d1b4e','#e8e0f8'],['#1a3a2a','#cce8d8'],
+      ['#4a1c1c','#f2d8d8'],['#1c3040','#ccdce8'],['#3d2b1a','#ecddd0'],
+      ['#1a2e4a','#c8d8ec'],['#2e1a3d','#dccef8'],['#1a3830','#bedfce'],
+      ['#3a2010','#e8cdb4'],['#102040','#baccdc'],['#301018','#f0ccd4'],
+      ['#0e2838','#b4ccd8'],['#28103c','#dccaec'],['#0c2c1c','#b4ccbe'],
+      ['#3c2008','#ecccac'],['#2c0830','#e8c0e8'],['#083030','#b0cccc'],
+      ['#302808','#dcd4b4'],['#082c40','#aac8dc']
     ];
-    const [fg,bg]=colors[n];
-    // Cute simple emoji faces
-    const faces=['😊','🦊','🐱','🐶','🐺','🦁','🐸','🦉','🐼','🦋',
-                 '🦄','🐯','🦊','🐰','🐨','🦔','🐙','🦊','🐦','🌟'];
-    const face=faces[n];
-    // Return data URL with inline SVG
-    const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><circle cx='40' cy='40' r='40' fill='${bg}'/><text x='40' y='52' font-size='36' text-anchor='middle' fill='${fg}'>${face}</text></svg>`;
+    const [fg, bg] = palettes[n];
+    const letters = 'ABJCDEMFGNHIOPQRSTU';
+    const letter = letters[n] || 'S';
+    const shapes = [
+      `<circle cx='40' cy='40' r='40' fill='${bg}'/>`,
+      `<circle cx='40' cy='40' r='40' fill='${bg}'/><circle cx='40' cy='40' r='32' fill='none' stroke='${fg}' stroke-width='1.5' opacity='.18'/>`,
+      `<circle cx='40' cy='40' r='40' fill='${bg}'/><path d='M0 40 Q20 20 40 40 Q60 60 80 40' fill='none' stroke='${fg}' stroke-width='1' opacity='.12'/>`,
+      `<circle cx='40' cy='40' r='40' fill='${bg}'/><circle cx='40' cy='40' r='38' fill='${fg}' opacity='.06'/>`,
+      `<circle cx='40' cy='40' r='40' fill='${bg}'/><line x1='0' y1='40' x2='80' y2='40' stroke='${fg}' stroke-width='1' opacity='.1'/><line x1='40' y1='0' x2='40' y2='80' stroke='${fg}' stroke-width='1' opacity='.1'/>`,
+    ];
+    const shape = shapes[n % shapes.length];
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>${shape}<text x='40' y='52' font-size='26' font-family='Georgia,serif' font-weight='700' text-anchor='middle' fill='${fg}'>${letter}</text></svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 

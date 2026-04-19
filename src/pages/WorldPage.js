@@ -57,7 +57,7 @@ export class WorldPage {
           </div>
 
           <!-- Controls -->
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 14px;background:var(--white);border-radius:var(--r-lg);border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 14px;background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border)">
             <div style="font-size:12px;color:var(--muted)">⬆⬇⬅➡ hoặc WASD · <strong>E/Space</strong> tương tác · Click chuột di chuyển</div>
             <div style="display:flex;gap:8px">
               ${[['⬆','w-up'],['⬇','w-down'],['⬅','w-left'],['➡','w-right']].map(([a,id])=>`<button id="${id}" style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:13px" onmousedown="worldPage._keyPress('${a==='⬆'?'ArrowUp':a==='⬇'?'ArrowDown':a==='⬅'?'ArrowLeft':'ArrowRight'}')">${a}</button>`).join('')}
@@ -122,7 +122,7 @@ export class WorldPage {
     </div>
 
     <!-- NPC Dialog -->
-    <div class="overlay" id="worldDialog">
+    <div class="modal-overlay" id="worldDialog">
       <div class="modal" style="max-width:460px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div style="font-size:36px" id="dlgEmoji">👾</div>

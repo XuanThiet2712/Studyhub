@@ -42,7 +42,7 @@ export class DocumentsPage {
     </div>
 
     <!-- ADD DOC MODAL -->
-    <div class="overlay" id="addDocModal">
+    <div class="modal-overlay" id="addDocModal">
       <div class="modal">
         <div class="modal-title" id="docModalTitle">＋ Thêm tài liệu</div>
         <input type="hidden" id="editDocId">
@@ -75,7 +75,7 @@ export class DocumentsPage {
     </div>
 
     <!-- ADD FOLDER MODAL -->
-    <div class="overlay" id="addFolderModal">
+    <div class="modal-overlay" id="addFolderModal">
       <div class="modal" style="max-width:400px">
         <div class="modal-title">📂 Tạo thư mục mới</div>
         <div class="form-group"><label class="form-label">Tên thư mục (môn học)</label><input class="form-input" id="folderName" placeholder="VD: Giải tích, LTNC, Hoá Hữu Cơ..." onkeydown="if(event.key==='Enter')docsPage.saveFolder()"></div>
@@ -106,7 +106,7 @@ export class DocumentsPage {
     const el=document.getElementById('folderList'); if(!el) return;
     const items=[['all','📁 Tất cả'],...this._folders.map(f=>[f,`📂 ${f}`])];
     el.innerHTML=items.map(([id,label])=>`
-      <div onclick="docsPage.setFolder('${id}',this)" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-lg);cursor:pointer;font-size:13px;font-weight:500;border:1.5px solid ${this._folder===id?'var(--blue)':'var(--border)'};background:${this._folder===id?'var(--blue-l)':'var(--white)'};color:${this._folder===id?'var(--blue-d)':'var(--text2)'};transition:all .15s;box-shadow:var(--shadow-sm)">
+      <div onclick="docsPage.setFolder('${id}',this)" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-lg);cursor:pointer;font-size:13px;font-weight:500;border:1.5px solid ${this._folder===id?'var(--blue)':'var(--border)'};background:${this._folder===id?'var(--blue-l)':'var(--surface)'};color:${this._folder===id?'var(--blue-d)':'var(--text2)'};transition:all .15s;box-shadow:var(--shadow-sm)">
         ${label}
         ${id!=='all'?`<span onclick="event.stopPropagation();docsPage.deleteFolder('${id}')" style="margin-left:4px;color:var(--muted2);font-size:10px;cursor:pointer" title="Xoá">✕</span>`:''}
         <span style="font-size:10px;background:rgba(0,0,0,0.06);border-radius:99px;padding:1px 6px">${id==='all'?this._docs.length:this._docs.filter(d=>d.subject===id).length}</span>
@@ -183,7 +183,7 @@ export class DocumentsPage {
     const ti={video:'🎬',pdf:'📄',link:'🔗',note:'📝'};
     grid.innerHTML=this._publicDocs.map(d=>{
       const c=tc[d.doc_type]||'#3b82f6';
-      return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-sm)';this.style.transform=''">
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-sm)';this.style.transform=''">
         <div style="height:4px;background:${c}"></div>
         <div style="padding:14px 16px;flex:1">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -225,7 +225,7 @@ export class DocumentsPage {
     grid.innerHTML=list.map(d=>{
       const c=TYPE_COLORS[d.doc_type]||'var(--blue)';
       const ic=TYPE_ICONS[d.doc_type]||'📄';
-      return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-sm)';this.style.transform=''">
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-sm)';this.style.transform=''">
         <div style="height:4px;background:${c}"></div>
         <div style="padding:16px;flex:1">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">

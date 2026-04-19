@@ -24,11 +24,11 @@ export class NotificationSystem {
     container.id = 'notif-bell-container';
     container.style.cssText = 'position:fixed;top:14px;right:20px;z-index:9999';
     container.innerHTML = `
-      <button id="notifBell" onclick="window.__notifSystem?.togglePanel()" style="background:var(--white);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;box-shadow:var(--shadow-sm);font-size:16px">
+      <button id="notifBell" onclick="window.__notifSystem?.togglePanel()" style="background:var(--surface);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;box-shadow:var(--shadow-sm);font-size:16px">
         🔔
-        <span id="notifBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:var(--red);color:white;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--white)"></span>
+        <span id="notifBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:var(--red);color:white;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)"></span>
       </button>
-      <div id="notifPanel" style="display:none;position:absolute;right:0;top:48px;width:300px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);overflow:hidden;max-height:400px">
+      <div id="notifPanel" style="display:none;position:absolute;right:0;top:48px;width:300px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);overflow:hidden;max-height:400px">
         <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:13px;font-weight:600">🔔 Thông báo</span>
           <button onclick="window.__notifSystem?.clearAll()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted)">Xóa tất cả</button>

@@ -11,7 +11,7 @@ export class ProfilePage {
     document.querySelector('.main').innerHTML=`
     <div class="page" style="max-width:900px">
       <!-- HERO BANNER -->
-      <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b,#312e81);border-radius:var(--r-2xl);padding:32px;margin-bottom:24px;position:relative;overflow:hidden">
+      <div style="background:var(--accent-g);border-radius:var(--r-2xl);padding:32px;margin-bottom:24px;position:relative;overflow:hidden">
         <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><circle cx=%2280%22 cy=%2220%22 r=%2260%22 fill=%22rgba(99,102,241,0.15)%22/><circle cx=%2210%22 cy=%2280%22 r=%2240%22 fill=%22rgba(139,92,246,0.1)%22/></svg>');opacity:.6"></div>
         <div style="position:relative;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
           <div style="position:relative">
@@ -26,9 +26,9 @@ export class ProfilePage {
           <!-- Stats -->
           <div style="display:flex;gap:20px;flex-wrap:wrap">
             ${[['⭐','XP',u.xp||0,'#60a5fa'],['🏆','Cấp',u.level||1,'#a78bfa'],['🔥','Streak',(u.streak||0)+' ngày','#fb923c'],['📚','Ngày học',Object.keys(JSON.parse(localStorage.getItem('sh_roadmap_progress')||'{}')).filter(k=>JSON.parse(localStorage.getItem('sh_roadmap_progress')||'{}')[k]).length+'/30','#4ade80']].map(([icon,label,val,color])=>`
-            <div style="text-align:center;background:rgba(255,255,255,0.08);border-radius:14px;padding:12px 18px;min-width:70px">
+            <div style="text-align:center;background:rgba(255,255,255,0.15);border-radius:14px;padding:12px 18px;min-width:70px">
               <div style="font-size:20px">${icon}</div>
-              <div style="font-size:18px;font-weight:800;color:${color};font-family:'JetBrains Mono',monospace;margin:3px 0">${val}</div>
+              <div style="font-size:18px;font-weight:800;color:${color};font-family:var(--mono);margin:3px 0">${val}</div>
               <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px">${label}</div>
             </div>`).join('')}
           </div>
@@ -60,12 +60,12 @@ export class ProfilePage {
           </div>
           <div class="form-group">
             <label class="form-label">Giới thiệu bản thân</label>
-            <textarea class="form-textarea" id="pBio" rows="3" placeholder="Viết gì đó về bạn...">${u.bio||''}</textarea>
+            <textarea class="form-input" id="pBio" rows="3" placeholder="Viết gì đó về bạn...">${u.bio||''}</textarea>
           </div>
-          <div class="form-row">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
               <label class="form-label">Giới tính</label>
-              <select class="form-select" id="pGender">
+              <select class="form-input" id="pGender">
                 <option value="male" ${u.gender==='male'?'selected':''}>👦 Nam</option>
                 <option value="female" ${u.gender==='female'?'selected':''}>👧 Nữ</option>
                 <option value="other" ${u.gender==='other'?'selected':''}>🌈 Khác</option>

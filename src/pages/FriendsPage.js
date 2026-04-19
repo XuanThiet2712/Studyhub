@@ -33,7 +33,7 @@ export class FriendsPage {
     </div>
 
     <!-- CHALLENGE MODAL -->
-    <div class="overlay" id="challengeModal">
+    <div class="modal-overlay" id="challengeModal">
       <div class="modal" style="max-width:460px;text-align:center">
         <div style="font-size:48px;margin-bottom:12px">⚔️</div>
         <div class="modal-title" style="margin-bottom:6px">Thách đấu từ vựng!</div>
@@ -102,7 +102,7 @@ export class FriendsPage {
       ${this._friends.map(f => {
         const u = new User(f); const isOnline = online.has(f.id);
         return `<div class="card" style="text-align:center;padding:20px;position:relative">
-          ${isOnline?`<div style="position:absolute;top:12px;right:12px;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--white)"></div>`:''}
+          ${isOnline?`<div style="position:absolute;top:12px;right:12px;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--surface)"></div>`:''}
           <img src="${u.avatarUrl}" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--border);margin-bottom:10px" onerror="this.style.display='none'">
           <div style="font-size:14px;font-weight:600">${f.display_name||f.username}</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:4px">@${f.username}</div>

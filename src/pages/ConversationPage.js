@@ -121,7 +121,7 @@ export class ConversationPage {
         <!-- CONVERSATION AREA -->
         <div id="convArea" style="display:none">
           <!-- Header -->
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px 16px">
             <button onclick="convPage.exitConversation()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted)">←</button>
             <div id="convScenarioIcon" style="font-size:28px"></div>
             <div style="flex:1">
@@ -138,10 +138,10 @@ export class ConversationPage {
             <!-- Chat -->
             <div style="display:flex;flex-direction:column;gap:12px">
               <!-- Messages -->
-              <div id="convMessages" style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;min-height:380px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+              <div id="convMessages" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;min-height:380px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
 
               <!-- Input -->
-              <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:12px">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:12px">
                 <textarea id="convInput" placeholder="Nhập câu trả lời bằng tiếng Anh... (Enter để gửi)" 
                   style="width:100%;border:none;outline:none;resize:none;font-size:14px;font-family:var(--font);min-height:60px;color:var(--text);background:transparent"
                   onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();convPage.sendMessage()}"
@@ -280,12 +280,12 @@ export class ConversationPage {
     try {
       const hint = await callGemini('You are an English learning assistant.', [{ role:'user', content: hintPrompt }]);
       const modal = document.createElement('div');
-      modal.className = 'overlay open';
+      modal.className = 'modal-overlay';
       modal.innerHTML = `<div class="modal modal-sm">
         <div class="modal-title">💡 Gợi ý cách trả lời</div>
         <div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${hint}</div>
         <div class="modal-footer">
-          <button class="btn btn-primary" onclick="this.closest('.overlay').remove()">Đóng</button>
+          <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Đóng</button>
         </div>
       </div>`;
       modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
@@ -302,12 +302,12 @@ export class ConversationPage {
     try {
       const result = await callGemini('You are a Vietnamese English translator.', [{ role:'user', content: translatePrompt }]);
       const modal = document.createElement('div');
-      modal.className = 'overlay open';
+      modal.className = 'modal-overlay';
       modal.innerHTML = `<div class="modal modal-sm">
         <div class="modal-title">🌐 Dịch câu AI vừa nói</div>
         <div style="background:var(--bg2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;font-size:13px;font-style:italic">"${lastAI.content}"</div>
         <div style="font-size:13px;line-height:1.7">${result}</div>
-        <div class="modal-footer"><button class="btn btn-primary" onclick="this.closest('.overlay').remove()">Đóng</button></div>
+        <div class="modal-footer"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Đóng</button></div>
       </div>`;
       modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
       document.body.appendChild(modal);

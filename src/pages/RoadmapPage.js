@@ -141,7 +141,7 @@ export class RoadmapPage {
       const active  = d.day === this._activeDay;
       const hasReview = d.reviewDays.some(r => this._progress[r]?.completed);
       return `<button onclick="roadmapPage.selectDay(${d.day})"
-        style="padding:12px 6px;border-radius:var(--r-lg);border:2px solid ${active?'var(--blue)':done?'var(--green)':'var(--border)'};background:${active?'var(--blue-l)':done?'var(--green-l)':'var(--white)'};cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font)">
+        style="padding:12px 6px;border-radius:var(--r-lg);border:2px solid ${active?'var(--blue)':done?'var(--green)':'var(--border)'};background:${active?'var(--blue-l)':done?'var(--green-l)':'var(--surface)'};cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font)">
         <div style="font-family:var(--serif);font-style:italic;font-size:20px;font-weight:700;color:${active?'var(--blue)':done?'var(--green)':'var(--text)'}">${d.day}</div>
         <div style="font-size:9px;color:var(--muted);margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${d.title.length>12?d.title.slice(0,12)+'…':d.title}</div>
         <div style="font-size:13px">${done?'✅':hasReview?'🔁':'○'}</div>
@@ -273,7 +273,7 @@ export class RoadmapPage {
             • Part 7 Single: đọc câu hỏi → scan bài → locate đáp án (không đọc từ đầu đến cuối!)<br>
             • Part 7 Multiple: đọc câu hỏi so sánh 2 bài → chỉ đọc phần liên quan
           </div>
-          <div style="font-size:12px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:10px">
+          <div style="font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">📝 MẪU CÂU PART 5 — Dùng ngữ pháp: ${d.grammar}</div>
             <div style="font-size:12px;color:var(--text);font-style:italic">
               "The ${d.vocab[0]||'manager'} was ___ by the board of directors." → <strong>approved / approving / approval / approvingly</strong>
@@ -333,7 +333,7 @@ export class RoadmapPage {
                 `"Could you please handle the ${w} for me today?"`,
                 `"The ${w} has been approved by the manager."`
               ];
-              return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+              return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
                 <button onclick="roadmapPage.speak(${JSON.stringify(sentences[i]||sentences[0])})" style="background:var(--pink-l);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;flex-shrink:0">▶</button>
                 <span style="font-size:12px;font-style:italic;color:var(--text)">${sentences[i]||sentences[0]}</span>
               </div>`;
@@ -464,14 +464,14 @@ export class RoadmapPage {
     const words = [];
     days.forEach(d => { const day=TOEIC_DAYS.find(x=>x.day===d); if(day) day.vocab.forEach(w=>words.push({word:w,...(VOCAB_DETAIL[w]||{vi:'?',phone:''})})); });
     const modal = document.createElement('div');
-    modal.className='overlay open';
+    modal.className='modal-overlay';
     modal.innerHTML=`<div class="modal" style="max-width:540px">
       <div class="modal-title">🔁 Ôn lại từ ngày ${days.join(', ')}</div>
       ${words.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
         <div><span style="font-family:var(--serif);font-style:italic;font-size:18px;color:var(--blue)">${v.word}</span><button onclick="roadmapPage.speak('${v.word}')" style="background:none;border:none;cursor:pointer">🔊</button><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${v.phone}</div></div>
         <div style="text-align:right"><div style="font-weight:500;font-size:13px">${v.vi}</div></div>
       </div>`).join('')}
-      <div class="modal-footer"><button class="btn btn-primary" onclick="this.closest('.overlay').remove()">Đóng</button></div>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Đóng</button></div>
     </div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
@@ -480,7 +480,7 @@ export class RoadmapPage {
   startSpeakingPractice(topic, vocabStr) {
     const vocab = vocabStr.split(',');
     const modal = document.createElement('div');
-    modal.className = 'overlay open';
+    modal.className = 'modal-overlay';
     modal.innerHTML = `<div class="modal" style="max-width:500px">
       <div class="modal-title">🎤 Luyện nói — ${topic}</div>
       <div style="background:var(--pink-l);border-radius:var(--r-md);padding:12px;margin-bottom:14px;font-size:13px">
@@ -498,8 +498,8 @@ export class RoadmapPage {
         ${vocab.map(w => `<button onclick="roadmapPage.speak('${w}')" style="background:var(--pink-l);border:1px solid var(--pink);border-radius:99px;padding:4px 10px;cursor:pointer;font-family:var(--mono);font-size:12px">▶ ${w}</button>`).join('')}
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="this.closest('.overlay').remove()">Đóng</button>
-        <button class="btn btn-primary" onclick="roadmapPage.markSection('speaking');this.closest('.overlay').remove()">✅ Đánh dấu hoàn thành</button>
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Đóng</button>
+        <button class="btn btn-primary" onclick="roadmapPage.markSection('speaking');this.closest('.modal-overlay').remove()">✅ Đánh dấu hoàn thành</button>
       </div>
     </div>`;
     modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });

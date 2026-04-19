@@ -143,7 +143,7 @@ export class CustomRoadmapPage {
         ${COURSE.map(d=>{
           const dn=this._progress[d.day];
           const ac=d.day===this._day;
-          return `<button onclick="crPage._day=${d.day};crPage._lesson=null;crPage._renderMain()" style="padding:8px 14px;border-radius:var(--r-lg);font-size:12px;font-weight:600;cursor:pointer;border:2px solid ${ac?d.color:dn?'var(--green)':'var(--border)'};background:${ac?d.color:dn?'var(--green-l)':'var(--white)'};color:${ac?'white':dn?'#065f46':'var(--text2)'};box-shadow:var(--shadow-xs);transition:all .2s">
+          return `<button onclick="crPage._day=${d.day};crPage._lesson=null;crPage._renderMain()" style="padding:8px 14px;border-radius:var(--r-lg);font-size:12px;font-weight:600;cursor:pointer;border:2px solid ${ac?d.color:dn?'var(--green)':'var(--border)'};background:${ac?d.color:dn?'var(--green-l)':'var(--surface)'};color:${ac?'white':dn?'#065f46':'var(--text2)'};box-shadow:var(--shadow-xs);transition:all .2s">
             <span style="font-size:14px;display:block">${dn?'✅':d.icon}</span>Ngày ${d.day}
           </button>`;
         }).join('')}
@@ -190,7 +190,7 @@ export class CustomRoadmapPage {
         <div style="display:flex;flex-direction:column;gap:8px">
           ${d.lessons.map((l,li)=>{
             const done2=lessDone.includes(l.id);
-            return `<div onclick="crPage._lesson='${l.id}';crPage._renderLesson()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--white);border:1.5px solid ${done2?'var(--green)':'var(--border)'};border-radius:var(--r-xl);cursor:pointer;transition:all .2s;box-shadow:var(--shadow-xs)" onmouseover="this.style.borderColor='${d.color}';this.style.transform='translateX(4px)'" onmouseout="this.style.borderColor='${done2?'var(--green)':'var(--border)'}';this.style.transform=''">
+            return `<div onclick="crPage._lesson='${l.id}';crPage._renderLesson()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface);border:1.5px solid ${done2?'var(--green)':'var(--border)'};border-radius:var(--r-xl);cursor:pointer;transition:all .2s;box-shadow:var(--shadow-xs)" onmouseover="this.style.borderColor='${d.color}';this.style.transform='translateX(4px)'" onmouseout="this.style.borderColor='${done2?'var(--green)':'var(--border)'}';this.style.transform=''">
               <div style="width:40px;height:40px;border-radius:50%;background:${done2?'var(--green-l)':'var(--blue-l)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${done2?'✅':l.icon}</div>
               <div style="flex:1">
                 <div style="font-size:14px;font-weight:700">${l.title}</div>
@@ -242,7 +242,7 @@ export class CustomRoadmapPage {
     if(l.items){
       contentHtml+=`<div style="overflow-x:auto;margin-bottom:14px"><table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:13px">
         <thead><tr>${['Chữ','Tên','IPA','Ví dụ','🔊'].map(h=>`<th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${h}</th>`).join('')}</tr></thead>
-        <tbody>${l.items.map((w,i)=>`<tr style="background:${i%2?'var(--bg2)':'var(--white)'}">
+        <tbody>${l.items.map((w,i)=>`<tr style="background:${i%2?'var(--bg2)':'var(--surface)'}">
           <td style="padding:9px 10px;font-size:22px;font-weight:900;color:${d.color};border-radius:${i===0?'var(--r-md) 0 0 var(--r-md)':'0'}">${w.letter}</td>
           <td style="padding:9px 10px;font-weight:600">${w.name}</td>
           <td style="padding:9px 10px;font-family:var(--mono);color:var(--purple);font-size:14px">${w.ipa}</td>

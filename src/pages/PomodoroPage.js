@@ -8,7 +8,7 @@ export class PomodoroPage {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px">
         <div class="card" style="text-align:center;padding:36px">
           <div style="font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px" id="phaseLabel">🍅 POMODORO</div>
-          <div style="font-family:'Lora',serif;font-style:italic;font-size:72px;font-weight:700;color:var(--blue);line-height:1" id="timerDisp">25:00</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:72px;font-weight:700;color:var(--blue);line-height:1" id="timerDisp">25:00</div>
           <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin:10px 0 20px" id="taskLabel">Chưa có tác vụ</div>
           <div style="display:flex;gap:8px;justify-content:center">
             <button class="btn btn-ghost" onclick="pomoPage.reset()">↺</button>
@@ -17,8 +17,8 @@ export class PomodoroPage {
           </div>
           <div style="display:flex;gap:5px;justify-content:center;margin-top:16px" id="dots"></div>
           <div style="display:flex;gap:20px;justify-content:center;margin-top:18px">
-            <div><div style="font-family:'Lora',serif;font-style:italic;font-size:24px;font-weight:700;color:var(--blue)" id="todaySess">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">PHIÊN</div></div>
-            <div><div style="font-family:'Lora',serif;font-style:italic;font-size:24px;font-weight:700;color:var(--orange)" id="todayMins">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">PHÚT</div></div>
+            <div><div style="font-family:var(--serif);font-style:italic;font-size:24px;font-weight:700;color:var(--blue)" id="todaySess">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">PHIÊN</div></div>
+            <div><div style="font-family:var(--serif);font-style:italic;font-size:24px;font-weight:700;color:var(--orange)" id="todayMins">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">PHÚT</div></div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">

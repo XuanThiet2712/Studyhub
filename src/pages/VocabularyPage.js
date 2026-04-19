@@ -78,7 +78,7 @@ export class VocabularyPage {
     </div>
 
     <!-- ADD/EDIT MODAL -->
-    <div class="overlay" id="addVocabModal">
+    <div class="modal-overlay" id="addVocabModal">
       <div class="modal" style="max-width:560px">
         <div class="modal-title" id="addVocabTitle">＋ Thêm từ mới</div>
         <input type="hidden" id="editVocabId">
@@ -123,7 +123,7 @@ export class VocabularyPage {
     </div>
 
     <!-- DICTIONARY MODAL -->
-    <div class="overlay" id="dictModal">
+    <div class="modal-overlay" id="dictModal">
       <div class="modal" style="max-width:560px">
         <div class="modal-title">🔍 Từ điển Anh — Free Dictionary</div>
         <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -228,10 +228,10 @@ export class VocabularyPage {
         <div style="flex:1;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--blue);border-radius:99px;transition:width .3s"></div></div>
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="background:none;border:none;cursor:pointer;font-size:20px">🔊</button>
       </div>
-      <div onclick="vocabPage.flipCard()" style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:40px 32px;text-align:center;cursor:pointer;min-height:220px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow-md);position:relative">
+      <div onclick="vocabPage.flipCard()" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:40px 32px;text-align:center;cursor:pointer;min-height:220px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow-md);position:relative">
         <div style="position:absolute;top:14px;right:16px;font-size:11px;color:var(--muted)">${flipped?'↩ từ vựng':'👆 nhấn xem nghĩa'}</div>
         ${!flipped
-          ? `<div style="font-family:'Lora',serif;font-size:36px;font-weight:700;margin-bottom:8px">${w.word}</div><div style="font-size:14px;color:var(--muted);font-family:var(--mono)">${w.phonetic||''}</div><div style="font-size:12px;color:var(--blue);margin-top:6px">${w.wordType} · ${w.category}</div>`
+          ? `<div style="font-family:var(--serif);font-size:36px;font-weight:700;margin-bottom:8px">${w.word}</div><div style="font-size:14px;color:var(--muted);font-family:var(--mono)">${w.phonetic||''}</div><div style="font-size:12px;color:var(--blue);margin-top:6px">${w.wordType} · ${w.category}</div>`
           : `<div style="font-size:22px;font-weight:600;margin-bottom:8px">${w.meaningVi}</div>${w.definition?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:8px">${w.definition}</div>`:''}${w.example?`<div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">${w.example}</div>`:''}<div style="margin-top:12px"><span style="font-size:11px;padding:3px 10px;border-radius:99px;background:${w.levelColor}22;color:${w.levelColor}">${w.levelLabel}</span></div>`}
       </div>
       ${flipped
@@ -254,14 +254,14 @@ export class VocabularyPage {
         </div>
         <button class="btn btn-ghost btn-sm" onclick="vocabPage._quizScore={correct:0,total:0};vocabPage._quizQ=null;vocabPage.renderContent()">🔄 Reset</button>
       </div>
-      <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px;text-align:center;box-shadow:var(--shadow-sm);margin-bottom:16px">
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px;text-align:center;box-shadow:var(--shadow-sm);margin-bottom:16px">
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Nghĩa của từ này là gì?</div>
-        <div style="font-family:'Lora',serif;font-size:32px;font-weight:700">${q.word.word}</div>
+        <div style="font-family:var(--serif);font-size:32px;font-weight:700">${q.word.word}</div>
         <div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-top:4px">${q.word.phonetic||''}</div>
         <button onclick="vocabPage.speakText('${q.word.word.replace(/['"]/g,'_')}','en-US')" style="margin-top:8px;background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 Nghe</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${q.choices.map((c,i)=>`<button onclick="vocabPage.checkAnswer('${c.id}','${q.word.id}')" style="padding:14px 16px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;text-align:left;transition:all .15s;color:var(--text)" id="qbtn_${c.id}"><span style="font-weight:600;color:var(--muted);margin-right:8px">${['A','B','C','D'][i]}</span>${c.meaningVi}</button>`).join('')}
+        ${q.choices.map((c,i)=>`<button onclick="vocabPage.checkAnswer('${c.id}','${q.word.id}')" style="padding:14px 16px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;text-align:left;transition:all .15s;color:var(--text)" id="qbtn_${c.id}"><span style="font-weight:600;color:var(--muted);margin-right:8px">${['A','B','C','D'][i]}</span>${c.meaningVi}</button>`).join('')}
       </div>
     </div>`;
   }
@@ -279,10 +279,10 @@ export class VocabularyPage {
       <div style="background:linear-gradient(135deg,var(--blue-l),var(--purple-l));border:1.5px solid var(--blue);border-radius:var(--r-xl);padding:40px;text-align:center;margin-bottom:20px">
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="width:80px;height:80px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;font-size:32px;box-shadow:var(--shadow-md);color:white">🔊</button>
         <div style="margin-top:12px;font-size:13px;color:var(--muted)">Nhấn để nghe · Chọn từ bạn nghe được</div>
-        ${this._listenAnswered?`<div style="margin-top:14px;font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--blue)">${w.word}</div><div style="font-size:12px;color:var(--muted)">${w.phonetic||''}</div>`:''}
+        ${this._listenAnswered?`<div style="margin-top:14px;font-family:var(--serif);font-size:26px;font-weight:700;color:var(--blue)">${w.word}</div><div style="font-size:12px;color:var(--muted)">${w.phonetic||''}</div>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        ${choices.map((c,i)=>`<button onclick="vocabPage.checkListenAnswer('${c.id}','${w.id}',this)" style="padding:14px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;transition:all .15s" id="lbtn_${c.id}"><span style="font-weight:700;color:var(--muted);margin-right:6px">${['A','B','C','D'][i]}</span>${c.word}</button>`).join('')}
+        ${choices.map((c,i)=>`<button onclick="vocabPage.checkListenAnswer('${c.id}','${w.id}',this)" style="padding:14px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;transition:all .15s" id="lbtn_${c.id}"><span style="font-weight:700;color:var(--muted);margin-right:6px">${['A','B','C','D'][i]}</span>${c.word}</button>`).join('')}
       </div>
       <div style="display:flex;gap:10px;justify-content:center">
         <button class="btn btn-ghost" onclick="vocabPage._listenIdx=Math.max(0,vocabPage._listenIdx-1);vocabPage._listenAnswered=false;vocabPage.renderContent()">← Trước</button>
@@ -325,8 +325,8 @@ export class VocabularyPage {
         <h2 style="font-size:18px;font-weight:600;margin-top:4px">🎤 Luyện phát âm</h2>
         <p style="font-size:13px;color:var(--muted)">Đọc to từ tiếng Anh, AI chấm phát âm</p>
       </div>
-      <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:32px;text-align:center;box-shadow:var(--shadow-md);margin-bottom:20px">
-        <div style="font-family:'Lora',serif;font-size:42px;font-weight:700;color:var(--blue);margin-bottom:6px">${w.word}</div>
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:32px;text-align:center;box-shadow:var(--shadow-md);margin-bottom:20px">
+        <div style="font-family:var(--serif);font-size:42px;font-weight:700;color:var(--blue);margin-bottom:6px">${w.word}</div>
         <div style="font-size:14px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">${w.phonetic||''}</div>
         <div style="font-size:14px;color:var(--text2);margin-bottom:14px">${w.meaningVi}</div>
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:6px 16px;cursor:pointer;font-size:13px;color:var(--blue-d)">🔊 Nghe mẫu</button>
@@ -385,7 +385,7 @@ export class VocabularyPage {
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
         ${TOEIC_WORDBANK.map(w => {
           const owned = myWords.has(w.word.toLowerCase());
-          return `<div style="background:var(--white);border:1px solid ${owned?'var(--green)':'var(--border)'};border-radius:var(--r-lg);padding:14px;position:relative">
+          return `<div style="background:var(--surface);border:1px solid ${owned?'var(--green)':'var(--border)'};border-radius:var(--r-lg);padding:14px;position:relative">
             ${owned?'<div style="position:absolute;top:10px;right:10px;font-size:11px;background:var(--green-l);color:var(--green);padding:2px 8px;border-radius:99px">✅ Đã có</div>':''}
             <div style="font-size:15px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px">
               ${w.word}<button onclick="vocabPage.speakText('${w.word}','en-US')" style="background:none;border:none;cursor:pointer;font-size:12px">🔊</button>
@@ -460,7 +460,7 @@ export class VocabularyPage {
   _renderDictResult(d) {
     return `<div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700">${d.word}</div>
+        <div style="font-family:var(--serif);font-size:26px;font-weight:700">${d.word}</div>
         ${d.audioUrl?`<button onclick="new Audio('${d.audioUrl}').play()" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 Nghe</button>`:
         `<button onclick="vocabPage.speakText('${d.word}','en-US')" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 TTS</button>`}
       </div>
