@@ -78,7 +78,7 @@ export class VocabularyPage {
     </div>
 
     <!-- ADD/EDIT MODAL -->
-    <div class="modal-overlay" id="addVocabModal">
+    <div class="overlay" id="addVocabModal">
       <div class="modal" style="max-width:560px">
         <div class="modal-title" id="addVocabTitle">＋ Thêm từ mới</div>
         <input type="hidden" id="editVocabId">
@@ -123,7 +123,7 @@ export class VocabularyPage {
     </div>
 
     <!-- DICTIONARY MODAL -->
-    <div class="modal-overlay" id="dictModal">
+    <div class="overlay" id="dictModal">
       <div class="modal" style="max-width:560px">
         <div class="modal-title">🔍 Từ điển Anh — Free Dictionary</div>
         <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -228,10 +228,10 @@ export class VocabularyPage {
         <div style="flex:1;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--blue);border-radius:99px;transition:width .3s"></div></div>
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="background:none;border:none;cursor:pointer;font-size:20px">🔊</button>
       </div>
-      <div onclick="vocabPage.flipCard()" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:40px 32px;text-align:center;cursor:pointer;min-height:220px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow-md);position:relative">
+      <div onclick="vocabPage.flipCard()" style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:40px 32px;text-align:center;cursor:pointer;min-height:220px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow-md);position:relative">
         <div style="position:absolute;top:14px;right:16px;font-size:11px;color:var(--muted)">${flipped?'↩ từ vựng':'👆 nhấn xem nghĩa'}</div>
         ${!flipped
-          ? `<div style="font-family:var(--serif);font-size:36px;font-weight:700;margin-bottom:8px">${w.word}</div><div style="font-size:14px;color:var(--muted);font-family:var(--mono)">${w.phonetic||''}</div><div style="font-size:12px;color:var(--blue);margin-top:6px">${w.wordType} · ${w.category}</div>`
+          ? `<div style="font-family:'Lora',serif;font-size:36px;font-weight:700;margin-bottom:8px">${w.word}</div><div style="font-size:14px;color:var(--muted);font-family:var(--mono)">${w.phonetic||''}</div><div style="font-size:12px;color:var(--blue);margin-top:6px">${w.wordType} · ${w.category}</div>`
           : `<div style="font-size:22px;font-weight:600;margin-bottom:8px">${w.meaningVi}</div>${w.definition?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:8px">${w.definition}</div>`:''}${w.example?`<div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">${w.example}</div>`:''}<div style="margin-top:12px"><span style="font-size:11px;padding:3px 10px;border-radius:99px;background:${w.levelColor}22;color:${w.levelColor}">${w.levelLabel}</span></div>`}
       </div>
       ${flipped
@@ -254,14 +254,14 @@ export class VocabularyPage {
         </div>
         <button class="btn btn-ghost btn-sm" onclick="vocabPage._quizScore={correct:0,total:0};vocabPage._quizQ=null;vocabPage.renderContent()">🔄 Reset</button>
       </div>
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px;text-align:center;box-shadow:var(--shadow-sm);margin-bottom:16px">
+      <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px;text-align:center;box-shadow:var(--shadow-sm);margin-bottom:16px">
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Nghĩa của từ này là gì?</div>
-        <div style="font-family:var(--serif);font-size:32px;font-weight:700">${q.word.word}</div>
+        <div style="font-family:'Lora',serif;font-size:32px;font-weight:700">${q.word.word}</div>
         <div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-top:4px">${q.word.phonetic||''}</div>
         <button onclick="vocabPage.speakText('${q.word.word.replace(/['"]/g,'_')}','en-US')" style="margin-top:8px;background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 Nghe</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${q.choices.map((c,i)=>`<button onclick="vocabPage.checkAnswer('${c.id}','${q.word.id}')" style="padding:14px 16px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;text-align:left;transition:all .15s;color:var(--text)" id="qbtn_${c.id}"><span style="font-weight:600;color:var(--muted);margin-right:8px">${['A','B','C','D'][i]}</span>${c.meaningVi}</button>`).join('')}
+        ${q.choices.map((c,i)=>`<button onclick="vocabPage.checkAnswer('${c.id}','${q.word.id}')" style="padding:14px 16px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;text-align:left;transition:all .15s;color:var(--text)" id="qbtn_${c.id}"><span style="font-weight:600;color:var(--muted);margin-right:8px">${['A','B','C','D'][i]}</span>${c.meaningVi}</button>`).join('')}
       </div>
     </div>`;
   }
@@ -279,10 +279,10 @@ export class VocabularyPage {
       <div style="background:linear-gradient(135deg,var(--blue-l),var(--purple-l));border:1.5px solid var(--blue);border-radius:var(--r-xl);padding:40px;text-align:center;margin-bottom:20px">
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="width:80px;height:80px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;font-size:32px;box-shadow:var(--shadow-md);color:white">🔊</button>
         <div style="margin-top:12px;font-size:13px;color:var(--muted)">Nhấn để nghe · Chọn từ bạn nghe được</div>
-        ${this._listenAnswered?`<div style="margin-top:14px;font-family:var(--serif);font-size:26px;font-weight:700;color:var(--blue)">${w.word}</div><div style="font-size:12px;color:var(--muted)">${w.phonetic||''}</div>`:''}
+        ${this._listenAnswered?`<div style="margin-top:14px;font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--blue)">${w.word}</div><div style="font-size:12px;color:var(--muted)">${w.phonetic||''}</div>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        ${choices.map((c,i)=>`<button onclick="vocabPage.checkListenAnswer('${c.id}','${w.id}',this)" style="padding:14px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;transition:all .15s" id="lbtn_${c.id}"><span style="font-weight:700;color:var(--muted);margin-right:6px">${['A','B','C','D'][i]}</span>${c.word}</button>`).join('')}
+        ${choices.map((c,i)=>`<button onclick="vocabPage.checkListenAnswer('${c.id}','${w.id}',this)" style="padding:14px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;transition:all .15s" id="lbtn_${c.id}"><span style="font-weight:700;color:var(--muted);margin-right:6px">${['A','B','C','D'][i]}</span>${c.word}</button>`).join('')}
       </div>
       <div style="display:flex;gap:10px;justify-content:center">
         <button class="btn btn-ghost" onclick="vocabPage._listenIdx=Math.max(0,vocabPage._listenIdx-1);vocabPage._listenAnswered=false;vocabPage.renderContent()">← Trước</button>
@@ -325,8 +325,8 @@ export class VocabularyPage {
         <h2 style="font-size:18px;font-weight:600;margin-top:4px">🎤 Luyện phát âm</h2>
         <p style="font-size:13px;color:var(--muted)">Đọc to từ tiếng Anh, AI chấm phát âm</p>
       </div>
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:32px;text-align:center;box-shadow:var(--shadow-md);margin-bottom:20px">
-        <div style="font-family:var(--serif);font-size:42px;font-weight:700;color:var(--blue);margin-bottom:6px">${w.word}</div>
+      <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:32px;text-align:center;box-shadow:var(--shadow-md);margin-bottom:20px">
+        <div style="font-family:'Lora',serif;font-size:42px;font-weight:700;color:var(--blue);margin-bottom:6px">${w.word}</div>
         <div style="font-size:14px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">${w.phonetic||''}</div>
         <div style="font-size:14px;color:var(--text2);margin-bottom:14px">${w.meaningVi}</div>
         <button onclick="vocabPage.speakText('${w.word.replace(/['"]/g,'_')}','en-US')" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:6px 16px;cursor:pointer;font-size:13px;color:var(--blue-d)">🔊 Nghe mẫu</button>
@@ -385,7 +385,7 @@ export class VocabularyPage {
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
         ${TOEIC_WORDBANK.map(w => {
           const owned = myWords.has(w.word.toLowerCase());
-          return `<div style="background:var(--surface);border:1px solid ${owned?'var(--green)':'var(--border)'};border-radius:var(--r-lg);padding:14px;position:relative">
+          return `<div style="background:var(--white);border:1px solid ${owned?'var(--green)':'var(--border)'};border-radius:var(--r-lg);padding:14px;position:relative">
             ${owned?'<div style="position:absolute;top:10px;right:10px;font-size:11px;background:var(--green-l);color:var(--green);padding:2px 8px;border-radius:99px">✅ Đã có</div>':''}
             <div style="font-size:15px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px">
               ${w.word}<button onclick="vocabPage.speakText('${w.word}','en-US')" style="background:none;border:none;cursor:pointer;font-size:12px">🔊</button>
@@ -440,35 +440,105 @@ export class VocabularyPage {
 
   async _fetchDict(word) {
     if (this._dictCache[word]) return this._dictCache[word];
+    // 1. Check local wordbank first
+    const local = TOEIC_WORDBANK.find(w=>w.word.toLowerCase()===word.toLowerCase());
     try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-      if (!res.ok) throw new Error('not found');
-      const json = await res.json();
-      const entry = json[0];
-      const phonetic = entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '';
-      const meanings = entry.meanings || [];
-      const first = meanings[0];
-      const result = { word:entry.word, phonetic, word_type:first?.partOfSpeech||'n', definition:first?.definitions?.[0]?.definition||'', example:first?.definitions?.[0]?.example||'', synonyms:first?.synonyms?.slice(0,5)||[], audioUrl:entry.phonetics?.find(p=>p.audio)?.audio||'' };
-      this._dictCache[word] = result; return result;
+      // 2. Fetch from Free Dictionary API
+      const [dictRes, transRes] = await Promise.allSettled([
+        fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`),
+        fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|vi`)
+      ]);
+
+      let meaning_vi = local?.meaning_vi || '';
+      // Get Vietnamese translation
+      if (transRes.status==='fulfilled' && transRes.value.ok) {
+        const tData = await transRes.value.json();
+        const tv = tData?.responseData?.translatedText;
+        if (tv && tv !== word && !tv.includes('MYMEMORY')) meaning_vi = tv;
+      }
+
+      if (dictRes.status==='fulfilled' && dictRes.value.ok) {
+        const json = await dictRes.value.json();
+        const entry = json[0];
+        const phonetic = entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '';
+        const meanings = entry.meanings || [];
+        // Get all part of speech definitions
+        const allMeanings = meanings.map(m=>({
+          partOfSpeech: m.partOfSpeech,
+          definitions: m.definitions?.slice(0,2) || [],
+          synonyms: m.synonyms?.slice(0,4) || []
+        }));
+        const first = meanings[0];
+        const result = {
+          word: entry.word, phonetic,
+          word_type: first?.partOfSpeech||'n',
+          meaning_vi,
+          definition: first?.definitions?.[0]?.definition||'',
+          example: first?.definitions?.[0]?.example||'',
+          synonyms: first?.synonyms?.slice(0,5)||[],
+          audioUrl: entry.phonetics?.find(p=>p.audio)?.audio||'',
+          allMeanings
+        };
+        this._dictCache[word] = result; return result;
+      }
+      // fallback to local or translation only
+      if (local) return {...local, meaning_vi: meaning_vi||local.meaning_vi, allMeanings:[]};
+      if (meaning_vi) return { word, phonetic:'', word_type:'n', meaning_vi, definition:'', example:'', synonyms:[], allMeanings:[] };
+      return null;
     } catch {
-      const local = TOEIC_WORDBANK.find(w=>w.word.toLowerCase()===word.toLowerCase());
-      if (local) return { word:local.word, phonetic:local.phonetic, word_type:local.word_type, definition:local.definition, example:local.example, synonyms:[] };
+      if (local) return {...local, meaning_vi: local.meaning_vi, allMeanings:[]};
       return null;
     }
   }
 
   _renderDictResult(d) {
+    const audioBtn = d.audioUrl
+      ? `<button onclick="new Audio('${d.audioUrl}').play()" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:5px 13px;cursor:pointer;font-size:12px;color:var(--blue-d);font-weight:600">🔊 Nghe</button>`
+      : `<button onclick="vocabPage.speakText('${d.word}','en-US')" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:5px 13px;cursor:pointer;font-size:12px;color:var(--blue-d);font-weight:600">🔊 TTS</button>`;
+
+    const meaningsHtml = d.allMeanings?.length ? d.allMeanings.map(m=>`
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${m.partOfSpeech}</div>
+        ${m.definitions.map((def,i)=>`<div style="display:flex;gap:8px;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--muted);flex-shrink:0;padding-top:2px">${i+1}.</span>
+          <div><div style="font-size:13px;line-height:1.6">${def.definition}</div>${def.example?`<div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:2px">"${def.example}"</div>`:''}</div>
+        </div>`).join('')}
+        ${m.synonyms?.length?`<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${m.synonyms.map(s=>`<span style="background:var(--bg2);padding:2px 8px;border-radius:99px;font-size:11px;color:var(--text2)">${s}</span>`).join('')}</div>`:''}
+      </div>`).join('') : d.definition ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${d.word_type}</div>
+        <div style="font-size:13px;line-height:1.6">${d.definition}</div>
+        ${d.example?`<div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:4px">"${d.example}"</div>`:''}
+      </div>` : '';
+
     return `<div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <div style="font-family:var(--serif);font-size:26px;font-weight:700">${d.word}</div>
-        ${d.audioUrl?`<button onclick="new Audio('${d.audioUrl}').play()" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 Nghe</button>`:
-        `<button onclick="vocabPage.speakText('${d.word}','en-US')" style="background:var(--blue-l);border:1px solid var(--blue);border-radius:99px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--blue-d)">🔊 TTS</button>`}
+      <!-- Word header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+        <div style="font-size:28px;font-weight:800;font-family:var(--display);color:var(--text)">${d.word}</div>
+        ${audioBtn}
       </div>
-      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">${d.phonetic||''} · <span style="color:var(--blue)">${d.word_type}</span></div>
-      ${d.definition?`<div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 14px;margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">Định nghĩa</div><div style="font-size:13px">${d.definition}</div></div>`:''}
-      ${d.example?`<div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 14px;margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">Ví dụ</div><div style="font-size:13px;font-style:italic">${d.example}</div></div>`:''}
-      ${d.synonyms?.length?`<div style="font-size:12px;color:var(--muted)">Từ đồng nghĩa: <span style="color:var(--text)">${d.synonyms.join(', ')}</span></div>`:''}
-      <div style="margin-top:12px;padding:10px;background:var(--orange-l);border-radius:var(--r-md);border-left:3px solid var(--orange);font-size:12px;color:var(--orange)">⚡ Nhấn "Thêm từ này" và điền nghĩa tiếng Việt để lưu vào kho từ vựng</div>
+      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">${d.phonetic||''}</div>
+
+      <!-- Vietnamese meaning — PROMINENT -->
+      ${d.meaning_vi ? `<div style="background:linear-gradient(135deg,var(--green-l),#d4f5e9);border:1.5px solid rgba(15,186,129,.3);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:22px">🇻🇳</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Nghĩa tiếng Việt</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">${d.meaning_vi}</div>
+        </div>
+      </div>` : `<div style="background:var(--yellow-l);border:1px solid rgba(245,166,35,.3);border-radius:var(--r-md);padding:10px 13px;margin-bottom:14px;font-size:12px;color:#92400e">
+        ⚠️ Chưa có nghĩa tiếng Việt. Điền thủ công sau khi thêm từ.
+      </div>`}
+
+      <!-- English definitions -->
+      <div style="background:var(--bg);border:1px solid var(--border-md);border-radius:var(--r-lg);padding:14px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📖 Định nghĩa tiếng Anh</div>
+        ${meaningsHtml || '<div style="color:var(--muted);font-size:13px">Không có dữ liệu</div>'}
+      </div>
+
+      <div style="padding:10px 13px;background:var(--blue-l);border-radius:var(--r-md);font-size:12px;color:var(--blue-d);font-weight:500">
+        💡 Nhấn <strong>"Thêm từ này"</strong> để lưu vào kho từ vựng
+      </div>
     </div>`;
   }
 
@@ -481,8 +551,11 @@ export class VocabularyPage {
     document.getElementById('vDef').value = d.definition || '';
     document.getElementById('vExample').value = d.example || '';
     if (d.word_type) { const sel=document.getElementById('vType'); const o=[...sel.options].find(o=>o.value===d.word_type); if(o) sel.value=d.word_type; }
+    const viEl = document.getElementById('vMeaning');
+    if (viEl && d.meaning_vi) viEl.value = d.meaning_vi;
     document.getElementById('addVocabModal').classList.add('open');
-    Toast.info('Điền nghĩa tiếng Việt rồi lưu!');
+    const msg = d.meaning_vi ? `✅ Đã điền nghĩa TV: "${d.meaning_vi}"` : '⚡ Điền nghĩa tiếng Việt rồi lưu!';
+    Toast.info(msg);
   }
 
   async lookupAndFill() {

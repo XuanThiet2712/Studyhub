@@ -37,14 +37,14 @@ export class WordLabPage {
             <div style="font-size:15px;font-weight:600;margin-bottom:6px">Nhập từ bất kỳ để AI phân tích</div>
             <div style="font-size:13px">AI sẽ phân tách tiền tố · gốc từ · hậu tố · gia đình từ · ví dụ TOEIC</div>
             <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap">
-              ${['impossible','management','international','productivity','transportation','professional','qualification','responsibility'].map(w=>`<button onclick="document.getElementById('anatInput').value='${w}';wlPage.analyzeAI()" style="padding:5px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px">${w}</button>`).join('')}
+              ${['impossible','management','international','productivity','transportation','professional','qualification','responsibility'].map(w=>`<button onclick="document.getElementById('anatInput').value='${w}';wlPage.analyzeAI()" style="padding:5px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:12px">${w}</button>`).join('')}
             </div>
           </div>
         </div>
 
         <!-- AI CHAT for word questions -->
         <div id="wordChat" style="display:none;margin-top:16px">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
               <div style="font-size:13px;font-weight:600">💬 Hỏi AI về từ này</div>
               <button onclick="document.getElementById('wordChat').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--muted)">✕</button>
@@ -62,9 +62,9 @@ export class WordLabPage {
       <div id="wl-game" style="display:none">
         <div style="max-width:560px;margin:0 auto">
           <div style="display:flex;gap:20px;justify-content:center;margin-bottom:16px">
-            <div style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:30px;font-weight:700;color:var(--blue)" id="sgScore">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">ĐIỂM</div></div>
-            <div style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:30px;font-weight:700;color:var(--orange)" id="sgStreak">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">🔥 STREAK</div></div>
-            <div style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:30px;font-weight:700;color:var(--purple)" id="sgBest">${localStorage.getItem('sh_solo_best')||0}</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">KỶ LỤC</div></div>
+            <div style="text-align:center"><div style="font-family:'Lora',serif;font-style:italic;font-size:30px;font-weight:700;color:var(--blue)" id="sgScore">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">ĐIỂM</div></div>
+            <div style="text-align:center"><div style="font-family:'Lora',serif;font-style:italic;font-size:30px;font-weight:700;color:var(--orange)" id="sgStreak">0</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">🔥 STREAK</div></div>
+            <div style="text-align:center"><div style="font-family:'Lora',serif;font-style:italic;font-size:30px;font-weight:700;color:var(--purple)" id="sgBest">${localStorage.getItem('sh_solo_best')||0}</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">KỶ LỤC</div></div>
           </div>
 
           <!-- Game mode selector -->
@@ -78,7 +78,7 @@ export class WordLabPage {
 
           <div class="card" style="text-align:center;padding:26px;margin-bottom:12px" id="sgQuestion">
             <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:10px" id="sgQLabel">Nghĩa tiếng Việt của từ này?</div>
-            <div style="font-family:var(--serif);font-style:italic;font-size:34px;font-weight:700;color:var(--blue);margin-bottom:6px" id="sgWord">—</div>
+            <div style="font-family:'Lora',serif;font-style:italic;font-size:34px;font-weight:700;color:var(--blue);margin-bottom:6px" id="sgWord">—</div>
             <div style="font-family:var(--mono);font-size:13px;color:var(--muted)" id="sgPhone"></div>
             <div style="font-size:12px;color:var(--muted);margin-top:6px;font-style:italic" id="sgExample"></div>
             <button onclick="wlPage.sgSpeak()" style="margin-top:10px;background:var(--blue-l);border:1px solid rgba(59,130,246,.2);color:var(--blue);padding:5px 14px;border-radius:99px;font-size:12px;cursor:pointer">🔊 Phát âm</button>
@@ -104,7 +104,7 @@ export class WordLabPage {
             {title:'ROOT — Gốc từ',col:'#3b82f6',items:[['-port-','mang, vác','import,export,airport,report'],['-duct-','dẫn, tạo','product,conduct,introduce'],['-cept-','lấy, nhận','accept,concept,except'],['-mit-','gửi, để','submit,commit,permit,admit'],['-vis-','thấy','visible,review,vision,visit'],['-tract-','kéo','contract,attract,extract'],['-scrib-','viết','describe,subscribe,prescribe'],['-press-','ép, in','express,impress,depress'],['-spec-','nhìn, quan sát','inspect,expect,respect'],['-fect-','làm, tạo','effect,affect,perfect']]},
             {title:'SUFFIX — Hậu tố',col:'#22c55e',items:[['-ment','kết quả, hành động','payment,agreement,management'],['-tion','sự, hành động','presentation,transaction,position'],['-able','có thể','available,flexible,reliable'],['-ity','tính chất','quality,productivity,ability'],['-er/-or','người làm','manager,director,employer'],['-al','thuộc về','national,financial,professional'],['-ize','biến thành','organize,prioritize,realize'],['-ness','trạng thái','business,awareness,fitness'],['-ful','đầy, có','successful,helpful,careful'],['-less','thiếu, không','careless,useless,jobless']]}
           ].map(sec=>`
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--shadow-sm)">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--shadow-sm)">
             <div style="font-size:11px;font-family:var(--mono);color:${sec.col};letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;font-weight:700">${sec.title}</div>
             ${sec.items.map(([p,m,e])=>`
             <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px" onclick="document.getElementById('anatInput').value='${e.split(',')[0]}';wlPage.sw('anatomy',document.querySelector('.tab'));wlPage.analyzeAI();" style="cursor:pointer">
@@ -192,7 +192,7 @@ export class WordLabPage {
     <div>
       <div class="card" style="text-align:center;padding:28px;margin-bottom:14px">
         <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">
-          <div style="font-family:var(--serif);font-style:italic;font-size:38px;font-weight:700">${d.word}</div>
+          <div style="font-family:'Lora',serif;font-style:italic;font-size:38px;font-weight:700">${d.word}</div>
           <span style="padding:3px 10px;border-radius:99px;font-size:11px;background:var(--blue-l);color:var(--blue-d);font-family:var(--mono)">${d.level||'intermediate'}</span>
         </div>
         <div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">${d.ipa||''}</div>
@@ -204,7 +204,7 @@ export class WordLabPage {
         ${d.parts?.length ? `<div style="display:flex;justify-content:center;align-items:stretch;gap:4px;flex-wrap:wrap;margin-bottom:18px">
           ${d.parts.map((p,i)=>`${i>0?'<div style="font-size:22px;color:var(--muted);align-self:center;margin:0 6px">+</div>':''}
           <div style="background:${p.color}12;border:2px solid ${p.color}30;border-radius:var(--r-lg);padding:12px 16px;min-width:85px;text-align:center;transition:transform .2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
-            <div style="font-family:var(--serif);font-style:italic;font-size:22px;font-weight:700;color:${p.color}">${p.part}</div>
+            <div style="font-family:'Lora',serif;font-style:italic;font-size:22px;font-weight:700;color:${p.color}">${p.part}</div>
             <div style="font-size:9px;font-family:var(--mono);color:${p.color};text-transform:uppercase;margin-top:2px">${p.type}</div>
             <div style="font-size:11px;font-weight:500;margin-top:4px">${p.meaning}</div>
           </div>`).join('')}

@@ -103,7 +103,7 @@ export class ChatPage {
       <div id="tab-dm" style="display:none">
         <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh - 280px)">
           <!-- Contact list -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
               <input class="form-input" id="dmSearch" placeholder="🔍 Tìm bạn bè..." oninput="chatPage.searchDMContacts(this.value)" style="font-size:12px">
             </div>
@@ -112,7 +112,7 @@ export class ChatPage {
             </div>
           </div>
           <!-- Chat window -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column" id="dmChatWindow">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;display:flex;flex-direction:column" id="dmChatWindow">
             <div style="padding:20px;text-align:center;color:var(--muted);margin:auto">
               <div style="font-size:40px;margin-bottom:10px">💌</div>
               <div style="font-weight:600;margin-bottom:4px">Chọn bạn để nhắn tin</div>
@@ -367,7 +367,7 @@ export class ChatPage {
 
   showAddFriend() {
     const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
+    modal.className = 'overlay open';
     modal.innerHTML = '<div class="modal modal-sm"><div class="modal-title">👥 Thêm bạn bè</div><div class="form-group"><label class="form-label">Tên đăng nhập của bạn</label><input class="form-input" id="addFriendInput" placeholder="username"></div><div class="modal-footer"><button class="btn btn-ghost" onclick="this.closest(\'.overlay\').remove()">Hủy</button><button class="btn btn-primary" onclick="chatPage.sendFriendReq()">Gửi lời mời</button></div></div>';
     modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
     document.body.appendChild(modal);
@@ -381,7 +381,7 @@ export class ChatPage {
       const target = await this.db.select('profiles', { eq:{username}, single:true });
       if (target.id === me.id) { Toast.err('Không thể kết bạn với chính mình!'); return; }
       await this.db.insert('friendships', { requester: me.id, addressee: target.id, status:'pending' });
-      document.querySelector('.modal-overlay')?.remove();
+      document.querySelector('.overlay')?.remove();
       Toast.ok('Đã gửi lời mời đến ' + target.display_name + '!');
     } catch(e) { Toast.err(e.message==='not found'?'Không tìm thấy user!':'Đã gửi lời mời trước đó!'); }
   }
@@ -442,7 +442,7 @@ export class ChatPage {
       onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'">
       <div style="position:relative;flex-shrink:0">
         <img src="${User.avatarUrl(f.avatar_id)}" style="width:38px;height:38px;border-radius:50%;border:2px solid var(--border)">
-        <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:${f.is_online?'var(--green)':'var(--muted)'};border:2px solid var(--surface)"></div>
+        <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:${f.is_online?'var(--green)':'var(--muted)'};border:2px solid var(--white)"></div>
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.display_name}</div>

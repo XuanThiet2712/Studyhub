@@ -25,14 +25,14 @@
 
 <div id="app">
   <!-- Loading screen -->
-  <div id="loadingScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8f7f5;position:relative;overflow:hidden">
-    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(79,70,229,.05),transparent 70%);pointer-events:none"></div>
-    <div style="text-align:center;position:relative;z-index:1">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',Georgia,serif;font-size:26px;color:white;font-weight:700;margin:0 auto 14px;box-shadow:0 4px 16px rgba(37,99,235,.3)">S</div>
-      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:28px;font-weight:700;color:#1a1714;letter-spacing:-0.3px;margin-bottom:6px">StudyHub</div>
-      <div style="font-size:12px;color:#b5ada4;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px">TOEIC 600+ · Đang khởi động...</div>
-      <div style="margin-top:20px;width:180px;height:3px;background:#e8e2db;border-radius:99px;overflow:hidden;margin:20px auto 0">
-        <div id="loadBar" style="height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);border-radius:99px;width:0%;transition:width .3s"></div>
+  <div id="loadingScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eff6ff,#f5f3ff)">
+    <div style="text-align:center">
+      <div style="font-family:'Lora',serif;font-style:italic;font-size:36px;font-weight:700;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">
+        StudyHub
+      </div>
+      <div style="font-size:13px;color:#8896a5;font-family:monospace">Đang khởi động...</div>
+      <div style="margin-top:16px;width:200px;height:3px;background:#e4e8f0;border-radius:99px;overflow:hidden;margin:16px auto 0">
+        <div id="loadBar" style="height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:99px;width:0%;transition:width .3s"></div>
       </div>
     </div>
   </div>
@@ -72,7 +72,7 @@
 <div id="toastRoot"></div>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400;1,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <script>
 // ── MOBILE SIDEBAR TOGGLE ──
@@ -120,6 +120,19 @@ window.addEventListener('resize', () => {
   const logged = window.app?.store?.get('isLoggedIn');
   if (logged) showMobileUI(window.app?.store?.get('currentUser'));
   else hideMobileUI();
+});
+
+// ── GLOBAL OVERLAY CLICK-TO-CLOSE ──
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+// ESC key closes overlays
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+  }
 });
 </script>
 

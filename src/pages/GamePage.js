@@ -44,7 +44,7 @@ export class GamePage {
             </div>
           </div>
 
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;max-width:720px;box-shadow:var(--shadow-sm)">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;max-width:720px;box-shadow:var(--shadow-sm)">
             <div id="modeSetup">
               <div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">
                 👆 Chọn chế độ chơi để bắt đầu
@@ -193,7 +193,7 @@ export class GamePage {
 
   showJoinRoom() {
     const modal = document.createElement('div');
-    modal.className='modal-overlay';
+    modal.className='overlay open';
     modal.innerHTML=`
     <div class="modal modal-sm">
       <div class="modal-title">🔑 Nhập mã phòng</div>
@@ -202,7 +202,7 @@ export class GamePage {
         <input class="form-input" id="joinCodeInput" placeholder="ABC123" style="font-family:var(--mono);font-size:18px;text-align:center;letter-spacing:3px;text-transform:uppercase" maxlength="6">
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Hủy</button>
+        <button class="btn btn-ghost" onclick="this.closest('.overlay').remove()">Hủy</button>
         <button class="btn btn-primary" onclick="gamePage.joinRoom(document.getElementById('joinCodeInput').value)">Vào phòng</button>
       </div>
     </div>`;
@@ -222,7 +222,7 @@ export class GamePage {
       else await this.db.insert('game_players', { room_id: room.id, user_id: user.id });
       this._room   = new GameRoom(room);
       this._player = { userId: user.id, score: 0 };
-      document.querySelector('.modal-overlay')?.remove();
+      document.querySelector('.overlay')?.remove();
       this._showWaiting();
       this._subscribeRoom(room.id);
     } catch(e) { Toast.err('Không tìm thấy phòng!'); }

@@ -1,12 +1,11 @@
 export class Modal {
-  constructor({ id, title, subtitle, content, size = '', onClose } = {}) {
-    this.id       = id || `modal_${Date.now()}`;
-    this.title    = title;
-    this.subtitle = subtitle;
-    this.content  = content;
-    this.size     = size;
-    this.onClose  = onClose;
-    this._el      = null;
+  constructor({ id, title, content, size = '', onClose } = {}) {
+    this.id      = id || `modal_${Date.now()}`;
+    this.title   = title;
+    this.content = content;
+    this.size    = size;
+    this.onClose = onClose;
+    this._el     = null;
   }
 
   open() {
@@ -15,17 +14,16 @@ export class Modal {
 
     this._el = document.createElement('div');
     this._el.id        = this.id;
-    this._el.className = 'modal-overlay';
+    this._el.className = 'overlay';
     this._el.innerHTML = `
-    <div class="modal ${this.size}" role="dialog" aria-modal="true">
+    <div class="modal ${this.size}" role="dialog">
       ${this.title ? `<div class="modal-title">${this.title}</div>` : ''}
-      ${this.subtitle ? `<div class="modal-subtitle">${this.subtitle}</div>` : ''}
       <div class="modal-body">${typeof this.content === 'string' ? this.content : ''}</div>
     </div>`;
 
     this._el.addEventListener('click', e => { if (e.target === this._el) this.close(); });
-    document.addEventListener('keydown', this._onKey = e => { if (e.key === 'Escape') this.close(); });
     document.body.appendChild(this._el);
+    requestAnimationFrame(() => this._el.classList.add('open'));
 
     if (typeof this.content === 'function') {
       this.content(this._el.querySelector('.modal-body'), this);
@@ -33,9 +31,8 @@ export class Modal {
   }
 
   close() {
+    this._el?.classList.remove('open');
     if (this.onClose) this.onClose();
-    this._el?.remove();
-    document.removeEventListener('keydown', this._onKey);
   }
 
   static open(opts) { const m = new Modal(opts); m.open(); return m; }

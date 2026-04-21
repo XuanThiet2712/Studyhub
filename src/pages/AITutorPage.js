@@ -76,7 +76,7 @@ export class AITutorPage {
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
         ${[['📊','Phân tích tiến độ học của tôi chi tiết'],['📚','Gợi ý từ vựng TOEIC tôi nên học tiếp'],['🎯','Chiến lược thi TOEIC 600+'],['📅','Lập kế hoạch học 7 ngày cho tôi'],['💪','Nhận xét điểm mạnh yếu và động viên tôi'],['🧠','Giải thích cách dùng SRS hiệu quả']].map(([e,t])=>`<button class="btn btn-ghost btn-sm" onclick="aiTutor.quickAsk('${t}')">${e} ${t.slice(0,20)}...</button>`).join('')}
       </div>
-      <div style="display:flex;flex-direction:column;height:calc(100vh-360px);min-height:400px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;flex-direction:column;height:calc(100vh-360px);min-height:400px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm)">
         <div id="aiMessages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px">
           <div style="text-align:center;padding:28px">
             <div style="font-size:48px;margin-bottom:12px">🤖</div>
@@ -86,7 +86,7 @@ export class AITutorPage {
           </div>
         </div>
         <div style="border-top:1px solid var(--border);padding:12px 14px;display:flex;gap:10px;align-items:flex-end;background:var(--bg2)">
-          <textarea id="aiInput" placeholder="Hỏi về tiến độ, từ vựng, ngữ pháp TOEIC..." style="flex:1;border:1.5px solid var(--border);border-radius:var(--r-lg);padding:10px 14px;font-size:13px;font-family:var(--font);resize:none;min-height:44px;max-height:120px;outline:none;background:var(--surface);transition:border .15s" rows="1"
+          <textarea id="aiInput" placeholder="Hỏi về tiến độ, từ vựng, ngữ pháp TOEIC..." style="flex:1;border:1.5px solid var(--border);border-radius:var(--r-lg);padding:10px 14px;font-size:13px;font-family:var(--font);resize:none;min-height:44px;max-height:120px;outline:none;background:var(--white);transition:border .15s" rows="1"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiTutor.send()}"
             onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"></textarea>
@@ -123,7 +123,7 @@ export class AITutorPage {
   _renderReading(el) {
     const topics=['Business','HR','Travel','Technology','Finance','Legal'];
     el.innerHTML=`
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div><div style="font-size:16px;font-weight:700">📖 Luyện đọc hiểu TOEIC</div><div style="font-size:12px;color:var(--muted)">AI tạo bài đọc Part 6-7 theo level của bạn</div></div>
           <button class="btn btn-primary" onclick="aiTutor.generateReading()" id="readingGenBtn">✨ Tạo bài mới</button>
@@ -171,7 +171,7 @@ export class AITutorPage {
         <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:8px">📄 PASSAGE</div>
         <div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${passage}</div>
       </div>
-      ${questions?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px">
+      ${questions?`<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">❓ CÂU HỎI</div>
         <div style="font-size:13px;line-height:2;white-space:pre-wrap">${questions}</div>
       </div>`:''}
@@ -185,7 +185,7 @@ export class AITutorPage {
   // ── LISTENING ─────────────────────────────────────────────────────────────
   _renderListening(el) {
     el.innerHTML=`
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div><div style="font-size:16px;font-weight:700">🎧 Luyện nghe TOEIC</div><div style="font-size:12px;color:var(--muted)">AI tạo hội thoại • TTS phát âm • Câu hỏi Part 1-4</div></div>
           <div style="display:flex;gap:8px">
@@ -242,7 +242,7 @@ FORMAT:
         </div>
         <div style="display:none;font-size:13px;line-height:1.8;white-space:pre-wrap">${script}</div>
       </div>
-      ${questions?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:13px;line-height:2;white-space:pre-wrap">${questions}</div></div>`:''}
+      ${questions?`<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:13px;line-height:2;white-space:pre-wrap">${questions}</div></div>`:''}
       ${vocab?`<div style="background:var(--yellow-l);border-radius:var(--r-md);padding:12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--yellow);margin-bottom:6px">📚 TỪ VỰNG KEY</div><div style="font-size:12px;line-height:1.8;white-space:pre-wrap">${vocab}</div></div>`:''}
       <div style="display:flex;gap:8px">
         <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block';this.textContent=this.textContent.includes('Xem')?'🙈 Ẩn':'✅ Xem đáp án'" style="background:var(--green-l);border:1px solid var(--green);color:var(--green);border-radius:99px;padding:6px 16px;font-size:12px;cursor:pointer;font-weight:600">✅ Xem đáp án</button>
@@ -255,13 +255,13 @@ FORMAT:
   _renderSpeaking(el) {
     el.innerHTML=`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
           <div style="font-size:15px;font-weight:700;margin-bottom:6px">🎤 Luyện phát âm từ vựng</div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Nghe → Nói → AI chấm điểm phát âm</div>
           <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="aiTutor.startPronunciation()">🎯 Bắt đầu luyện</button>
           <div id="pronArea"></div>
         </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
           <div style="font-size:15px;font-weight:700;margin-bottom:6px">💬 Hội thoại AI</div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Chọn tình huống và luyện nói thực tế cùng AI</div>
           <select id="convScenario" class="form-select" style="width:100%;margin-bottom:10px;font-size:13px">
@@ -276,7 +276,7 @@ FORMAT:
           <button class="btn btn-primary" style="width:100%" onclick="app.router.navigate('/conversation')">🚀 Vào luyện giao tiếp</button>
         </div>
       </div>
-      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
+      <div style="margin-top:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-sm)">
         <div style="font-size:15px;font-weight:700;margin-bottom:6px">🎙 Luyện nói TOEIC Speaking</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:14px">AI tạo chủ đề → Bạn nói → AI chấm điểm và gợi ý cải thiện</div>
         <button class="btn btn-primary" onclick="aiTutor.generateSpeakingTask()" id="speakTaskBtn">✨ Tạo chủ đề luyện nói</button>
@@ -346,11 +346,11 @@ SAMPLE: [1-2 câu mở đầu mẫu tiếng Anh]`;
   _renderGrammar(el) {
     const points=['Câu bị động (Passive Voice)','Thì hiện tại hoàn thành','Mệnh đề quan hệ (Which/That)','Câu điều kiện loại 1-2','So sánh hơn và nhất','V-ing vs To-infinitive','Must/Have to/Should','Câu hỏi đuôi (Tag Questions)'];
     el.innerHTML=`
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-sm)">
         <div style="font-size:16px;font-weight:700;margin-bottom:6px">📐 Luyện ngữ pháp TOEIC</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px">AI giải thích + Tạo bài tập Part 5 theo từng điểm ngữ pháp</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px">
-          ${points.map(p=>`<button onclick="aiTutor.generateGrammar('${p}')" style="padding:12px;border:1.5px solid var(--border);border-radius:var(--r-lg);background:var(--surface);cursor:pointer;text-align:left;font-size:13px;transition:all .15s" onmouseover="this.style.borderColor='var(--blue)';this.style.background='var(--blue-l)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">📐 ${p}</button>`).join('')}
+          ${points.map(p=>`<button onclick="aiTutor.generateGrammar('${p}')" style="padding:12px;border:1.5px solid var(--border);border-radius:var(--r-lg);background:var(--white);cursor:pointer;text-align:left;font-size:13px;transition:all .15s" onmouseover="this.style.borderColor='var(--blue)';this.style.background='var(--blue-l)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">📐 ${p}</button>`).join('')}
         </div>
         <div id="grammarContent"><div style="text-align:center;padding:30px;color:var(--muted)">Chọn điểm ngữ pháp để AI giải thích và tạo bài tập</div></div>
       </div>`;
@@ -376,7 +376,7 @@ FORMAT:
           <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px">📐 GIẢI THÍCH: ${point}</div>
           <div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${sec('EXPLAIN')||raw}</div>
         </div>
-        ${sec('EXERCISES')?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px">
+        ${sec('EXERCISES')?`<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;margin-bottom:10px">✏️ BÀI TẬP PART 5</div>
           <div style="font-size:13px;line-height:2.2;white-space:pre-wrap">${sec('EXERCISES')}</div>
         </div>`:''}

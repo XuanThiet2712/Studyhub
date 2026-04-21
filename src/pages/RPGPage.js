@@ -299,7 +299,7 @@ export class RPGPage {
       <!-- Question -->
       ${q?`<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xl);padding:18px;margin-bottom:14px;text-align:center">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:10px">Câu ${b.qi+1}/${b.vocab.length} · Trả lời ĐÚNG → tấn công · SAI → nhận dame!</div>
-        <div style="font-size:28px;font-weight:800;color:#a5b4fc;font-family:var(--serif);margin-bottom:4px">${q.word}</div>
+        <div style="font-size:28px;font-weight:800;color:#a5b4fc;font-family:'Lora',serif;margin-bottom:4px">${q.word}</div>
         <div style="font-size:12px;color:rgba(255,255,255,.4);font-family:var(--mono);margin-bottom:14px">${q.phonetic}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${q.choices.map((c,i)=>`<button id="ab${i}" onclick="rpgPage.answer(${i},${q.correctIdx})"
@@ -420,7 +420,7 @@ export class RPGPage {
           ${(data||[]).map((p,i)=>{
             const isMe=p.id===user?.id;
             const raw2=getRaw(p.id); const stats2=calcStats(raw2.levels||{});
-            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-lg);border:1px solid ${isMe?'var(--blue)':'var(--border)'};background:${isMe?'var(--blue-l)':'var(--surface)'};box-shadow:var(--shadow-xs)">
+            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-lg);border:1px solid ${isMe?'var(--blue)':'var(--border)'};background:${isMe?'var(--blue-l)':'var(--white)'};box-shadow:var(--shadow-xs)">
               <div style="font-size:18px;width:26px;text-align:center">${medals[i]||`#${i+1}`}</div>
               <img src="${User.avatarUrl(p.avatar_id||1)}" style="width:34px;height:34px;border-radius:50%;border:2px solid ${isMe?'var(--blue)':'var(--border)'}" onerror="this.style.display='none'">
               <div style="flex:1"><div style="font-size:13px;font-weight:700">${p.display_name||p.username}${isMe?' 👈':''}</div>

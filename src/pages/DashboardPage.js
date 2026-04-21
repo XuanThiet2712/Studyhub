@@ -1,198 +1,158 @@
 import { User }        from '../models/index.js';
 import { DayProgress } from '../models/index.js';
 
+const MOTIVATIONS = [
+  '🔥 Hôm nay tiến thêm 1 bước đến TOEIC 600+!',
+  '⭐ Consistency beats perfection — học đều hơn học nhiều!',
+  '🎯 Mỗi từ vựng học được là 1 viên gạch xây ước mơ!',
+  '💪 Người giỏi không phải không có lúc khó — họ chỉ không bỏ!',
+  '🌟 Streak của bạn là tài sản quý nhất. Đừng để mất!',
+  '📚 TOEIC không khó — khó là ở chỗ chưa bắt đầu!',
+];
+
 export class DashboardPage {
-  constructor(db, store, bus) {
-    this.db    = db;
-    this.store = store;
-    this.bus   = bus;
-  }
+  constructor(db, store, bus) { this.db=db; this.store=store; this.bus=bus; }
 
   render() {
-    const user    = new User(this.store.get('currentUser'));
-    const online  = (this.store.get('onlineUsers')||[]).length;
-    const daysDone= 0; // will be loaded async
+    const user = new User(this.store.get('currentUser'));
+    const online = (this.store.get('onlineUsers')||[]).length;
+    const mot = MOTIVATIONS[Math.floor(Math.random()*MOTIVATIONS.length)];
 
     document.querySelector('.main').innerHTML = `
-    <div class="page">
-      <!-- HERO -->
-      <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;margin-bottom:28px">
-        <div>
-          <h1 class="page-title" style="margin-bottom:6px">
-            Xin chào, <span style="background:var(--accent-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${user.displayName}</span>
-          </h1>
-          <p class="page-desc">
-            <em style="font-style:italic;color:var(--indigo)">"Just do it first."</em>
-            — Hôm nay học gì chưa?
-          </p>
-          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="app.router.navigate('/roadmap')">📅 Vào học ngay →</button>
-            <button class="btn btn-ghost" onclick="app.router.navigate('/game')">⚔️ Thách đấu</button>
-            <button class="btn btn-ghost" onclick="app.router.navigate('/chat')">💬 Chat</button>
-          </div>
-        </div>
-
-        <!-- Photo Zone -->
-        <div style="width:172px;flex-shrink:0" id="hinataZone">
-          <div style="background:var(--surface);border:1px solid var(--border);padding:14px;text-align:center;border-radius:var(--r-xl);box-shadow:var(--shadow-xs)">
-            <div style="font-size:10px;color:var(--faint);font-family:var(--mono);margin-bottom:10px;letter-spacing:0.8px;text-transform:uppercase">Photo</div>
-            <img id="hinataImg" src="" alt="" style="width:140px;height:140px;object-fit:cover;border-radius:var(--r-lg);display:none;cursor:pointer" onclick="dashPage.uploadHinata()" onerror="this.style.display='none';document.getElementById('hinataPlaceholder').style.display='flex'">
-            <div id="hinataPlaceholder" style="width:140px;height:140px;background:var(--bg2);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px dashed var(--border2)" onclick="dashPage.uploadHinata()">
-              <div style="font-size:24px;opacity:.4">+</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:6px">Thêm ảnh</div>
+    <div class="page anim-fade">
+      <!-- HERO BANNER -->
+      <div style="background:linear-gradient(135deg,#0c1130,#1a1f4a,#251865);border-radius:var(--r-2xl);padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-60px;right:-40px;width:260px;height:260px;border-radius:50%;background:rgba(79,110,247,0.15);pointer-events:none"></div>
+        <div style="position:absolute;bottom:-40px;right:100px;width:180px;height:180px;border-radius:50%;background:rgba(124,94,246,0.12);pointer-events:none"></div>
+        <div style="position:relative;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:6px">👋 Chào trở lại,</div>
+            <h1 style="font-family:var(--display);font-size:28px;font-weight:900;color:white;margin-bottom:8px">${user.displayName}</h1>
+            <p style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:16px">${mot}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="app.router.navigate('/roadmap')">📅 Học ngay →</button>
+              <button onclick="app.router.navigate('/ai-tutor')" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;padding:8px 16px;border-radius:var(--r-lg);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">🤖 AI Tutor</button>
             </div>
-            <input type="file" id="hinataInput" accept="image/*" style="display:none" onchange="dashPage.setHinata(this)">
+          </div>
+          <!-- Quick stats -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${[
+              ['⭐','XP',user.xp,'#fbbf24'],
+              ['🏆','Cấp',user.level,'#a78bfa'],
+              ['🔥','Streak',(user.streak||0)+' ngày','#fb923c'],
+              ['🟢','Online',online,'#4ade80'],
+            ].map(([ic,lb,val,col])=>`
+            <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xl);padding:14px 18px;text-align:center;min-width:72px">
+              <div style="font-size:20px;margin-bottom:4px">${ic}</div>
+              <div style="font-family:var(--display);font-size:18px;font-weight:900;color:${col}">${val}</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.4px">${lb}</div>
+            </div>`).join('')}
           </div>
         </div>
-      </div>
-
-      <!-- STATS ROW -->
-      <div class="grid-4" style="margin-bottom:24px" id="statsRow">
-        <div class="stat"><div class="stat-icon">📅</div><div class="stat-val" id="st-days">—</div><div class="stat-label">ngày học xong</div></div>
-        <div class="stat"><div class="stat-icon">📖</div><div class="stat-val" id="st-vocab">—</div><div class="stat-label">từ vựng đã lưu</div></div>
-        <div class="stat"><div class="stat-icon">🔥</div><div class="stat-val" id="st-streak">${user.streak||0}</div><div class="stat-label">ngày liên tiếp</div></div>
-        <div class="stat"><div class="stat-icon">🟢</div><div class="stat-val" id="st-online">${online}</div><div class="stat-label">đang online</div></div>
-      </div>
-
-      <!-- GRID -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
         <!-- XP Progress -->
-        <div class="card">
-          <div class="card-title">⭐ Tiến độ XP — Cấp ${user.level}</div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-            <img src="${user.avatarUrl}" style="width:48px;height:48px;border-radius:50%;border:3px solid var(--blue)">
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:600">${user.displayName}</div>
-              <div style="font-size:12px;color:var(--muted);font-family:var(--mono)">${user.xp} XP · ${user.xpToNext} XP đến cấp ${user.level+1}</div>
-              <div class="prog-track" style="margin-top:6px">
-                <div class="prog-fill" style="width:${Math.min((user.xp%(user.level*100))/(user.level*100)*100,100)}%;background:var(--accent-g)"></div>
-              </div>
-            </div>
+        <div style="margin-top:20px;position:relative">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;color:rgba(255,255,255,.5)">
+            <span>Cấp ${user.level}</span>
+            <span>${user.xp % (user.level*100)} / ${user.level*100} XP</span>
+            <span>Cấp ${user.level+1}</span>
           </div>
-          <div style="font-size:12px;color:var(--muted)">Học từ vựng: +5 XP · Hoàn thành ngày: +50 XP · Thắng game: +30 XP</div>
-        </div>
-
-        <!-- Today tasks -->
-        <div class="card">
-          <div class="card-title">📋 Hôm nay</div>
-          <div id="todayTasks">
-            <div style="text-align:center;color:var(--muted);padding:12px;font-family:var(--mono);font-size:12px">Đang tải...</div>
+          <div style="height:6px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(100,(user.xp%(user.level*100))/(user.level*100)*100)}%;background:linear-gradient(90deg,#60a5fa,#a78bfa);border-radius:99px;transition:width 1s ease"></div>
           </div>
-          <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="app.router.navigate('/roadmap')">
-            📅 Vào lộ trình học →
-          </button>
         </div>
       </div>
 
-      <!-- Due vocab + leaderboard preview -->
-      <div class="grid-2">
+      <!-- QUICK ACTIONS -->
+      <div class="anim-stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:24px">
+        ${[
+          ['/vocabulary','📚','Từ vựng','Thêm & ôn tập','var(--blue)','var(--blue-l)'],
+          ['/roadmap','📅','Lộ trình','30 ngày TOEIC','var(--purple)','var(--purple-l)'],
+          ['/ai-tutor','🤖','AI Tutor','Hỏi & luyện tập','var(--green)','var(--green-l)'],
+          ['/game','⚔️','Word Battle','Thi đấu real-time','var(--red)','var(--red-l)'],
+          ['/rpg','🗡️','RPG','Đánh quái ôn từ','var(--orange)','var(--orange-l)'],
+          ['/world','🌍','World','Gặp gỡ online','var(--teal)','var(--teal-l)'],
+        ].map(([r,ic,t,s,c,bg])=>`
+        <div onclick="app.router.navigate('${r}')" style="background:${bg};border:1.5px solid ${c}22;border-radius:var(--r-xl);padding:16px;cursor:pointer;transition:all .2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 20px ${c}28'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div style="font-size:28px;margin-bottom:8px">${ic}</div>
+          <div style="font-family:var(--display);font-size:14px;font-weight:700;color:${c};margin-bottom:2px">${t}</div>
+          <div style="font-size:11px;color:var(--muted)">${s}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- STATS GRID -->
+      <div class="grid-2" style="gap:16px;margin-bottom:20px">
+        <!-- Vocab stats -->
         <div class="card">
-          <div class="card-title">⏰ Từ vựng cần ôn hôm nay</div>
-          <div id="dueVocab"><div style="text-align:center;color:var(--muted);font-size:12px;padding:12px">Đang tải...</div></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="app.router.navigate('/vocabulary')">Xem tất cả →</button>
+          <div class="card-title">📚 Từ vựng hôm nay</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:var(--blue-l);border-radius:var(--r-lg);padding:12px;text-align:center">
+              <div style="font-family:var(--display);font-size:26px;font-weight:900;color:var(--blue)" id="dashTotalWords">—</div>
+              <div style="font-size:11px;color:var(--muted)">Tổng từ</div>
+            </div>
+            <div style="background:var(--orange-l);border-radius:var(--r-lg);padding:12px;text-align:center">
+              <div style="font-family:var(--display);font-size:26px;font-weight:900;color:var(--orange)" id="dashDueWords">—</div>
+              <div style="font-size:11px;color:var(--muted)">Cần ôn</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="app.router.navigate('/vocabulary')">Ôn tập ngay →</button>
         </div>
+
+        <!-- Roadmap progress -->
         <div class="card">
-          <div class="card-title">🏆 Top học viên</div>
-          <div id="lbPreview"><div style="text-align:center;color:var(--muted);font-size:12px;padding:12px">Đang tải...</div></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="app.router.navigate('/leaderboard')">Xem bảng xếp hạng →</button>
+          <div class="card-title">📅 Lộ trình 30 ngày</div>
+          <div style="text-align:center;padding:8px 0 12px">
+            <div style="font-family:var(--display);font-size:44px;font-weight:900;color:var(--purple)" id="dashDaysDone">—</div>
+            <div style="font-size:13px;color:var(--muted)">/30 ngày hoàn thành</div>
+          </div>
+          <div class="prog-track" style="margin-bottom:12px">
+            <div class="prog-fill" id="dashRoadmapBar" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div>
+          </div>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;color:var(--purple);border-color:var(--purple)" onclick="app.router.navigate('/roadmap')">Tiếp tục học →</button>
+        </div>
+      </div>
+
+      <!-- RECENT ACTIVITY -->
+      <div class="card">
+        <div class="card-title">⚡ Truy cập nhanh</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${[
+            ['/conversation','💬','Giao tiếp AI'],
+            ['/custom-roadmap','📗','Tiếng Anh cơ bản'],
+            ['/chat','💬','Cộng đồng'],
+            ['/documents','📁','Tài liệu'],
+            ['/leaderboard','🏆','BXH'],
+            ['/friends','👥','Bạn bè'],
+            ['/notes','📝','Ghi chú'],
+            ['/pomodoro','⏱️','Pomodoro'],
+          ].map(([r,ic,t])=>`
+          <button onclick="app.router.navigate('${r}')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;background:var(--bg2);border:1px solid var(--border-md);cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;font-family:var(--font)" onmouseover="this.style.background='var(--blue-l)';this.style.borderColor='var(--blue)';this.style.color='var(--blue-d)'" onmouseout="this.style.background='var(--bg2)';this.style.borderColor='var(--border-md)';this.style.color='var(--text2)'">${ic} ${t}</button>`).join('')}
         </div>
       </div>
     </div>`;
 
-    window.dashPage = this;
-    this._loadData();
-    this._loadHinata();
-    this.bus.on('presence:update', () => {
-      const el = document.getElementById('st-online');
-      if (el) el.textContent = (this.store.get('onlineUsers')||[]).length;
-    });
+    this._loadStats();
   }
 
-  async _loadData() {
+  async _loadStats() {
     const user = this.store.get('currentUser');
+    if (!user) return;
     try {
-      const [progress, vocab, lb] = await Promise.all([
-        this.db.select('learning_progress',{eq:{user_id:user.id}}),
-        this.db.select('vocabulary',{eq:{user_id:user.id},limit:200}),
-        this.db.select('leaderboard_cache',{select:'user_id,total_xp',order:{col:'total_xp',asc:false},limit:5}),
+      const [vocab, progress] = await Promise.all([
+        this.db.select('vocabulary',{eq:{user_id:user.id}}).catch(()=>[]),
+        this.db.select('learning_progress',{eq:{user_id:user.id}}).catch(()=>[]),
       ]);
-
-      // Stats
+      const due = vocab.filter(v=>new Date(v.next_review)<=new Date()).length;
       const done = progress.filter(p=>p.completed).length;
-      document.getElementById('st-days').textContent  = done;
-      document.getElementById('st-vocab').textContent = vocab.length;
-      this.bus.emit('vocab:updated', vocab.length);
 
-      // Today's task
-      const today   = done+1;
-      const todayEl = document.getElementById('todayTasks');
-      const tp      = progress.find(p=>p.day_number===today);
-      if (tp) {
-        const dp = new DayProgress(tp);
-        todayEl.innerHTML = `
-        <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">Ngày ${today} · ${dp.progressPct}% hoàn thành</div>
-        <div class="prog-track" style="margin-bottom:10px"><div class="prog-fill" style="width:${dp.progressPct}%;background:var(--green)"></div></div>
-        ${['grammar','vocab','listening','reading','speaking'].map(s=>{
-          const done = dp[s + 'Done'];
-          return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-            <span>${done?'✅':'○'}</span>
-            <span style="color:${done?'var(--muted)':'var(--text)'};text-decoration:${done?'line-through':''}">${{grammar:'📐 Ngữ pháp',vocab:'📖 Từ vựng',listening:'🎧 Nghe',reading:'📄 Đọc hiểu',speaking:'🗣️ Nói'}[s]}</span>
-          </div>`;
-        }).join('')}`;
-      } else {
-        todayEl.innerHTML = `<div style="font-size:13px;color:var(--muted)">Ngày ${today} chưa bắt đầu. Bắt đầu học ngay!</div>`;
-      }
+      const tw=document.getElementById('dashTotalWords');
+      const dw=document.getElementById('dashDueWords');
+      const dd=document.getElementById('dashDaysDone');
+      const rb=document.getElementById('dashRoadmapBar');
 
-      // Due vocab
-      const due   = vocab.filter(v => new Date(v.next_review) <= new Date()).slice(0,5);
-      const dueEl = document.getElementById('dueVocab');
-      if (!due.length) { dueEl.innerHTML=`<div style="color:var(--green);font-size:13px;text-align:center;padding:8px">🎉 Không có từ nào cần ôn hôm nay!</div>`; }
-      else dueEl.innerHTML = due.map(v=>`
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span style="font-family:var(--serif);font-style:italic;color:var(--blue);font-size:15px">${v.word}</span>
-        <span style="color:var(--muted)">${v.meaning_vi}</span>
-      </div>`).join('');
-
-      // Leaderboard preview
-      const uids    = lb.map(r=>r.user_id);
-      const lbProfs = uids.length ? await this.db.select('profiles',{select:'id,display_name,avatar_id',in:{id:uids}}) : [];
-      const pMap    = Object.fromEntries(lbProfs.map(p=>[p.id,p]));
-      const lbEl    = document.getElementById('lbPreview');
-      lbEl.innerHTML = lb.map((r,i)=>{
-        const p = pMap[r.user_id]||{};
-        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div style="font-family:var(--serif);font-weight:700;color:${['#f59e0b','#9ca3af','#b45309','var(--muted)','var(--muted)'][i]};min-width:22px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
-          <img src="${User.avatarUrl(p.avatar_id||1)}" style="width:28px;height:28px;border-radius:50%">
-          <div style="flex:1;font-size:12px;font-weight:500">${p.display_name||'?'}</div>
-          <div style="font-family:var(--mono);font-size:12px;color:var(--blue)">${r.total_xp} XP</div>
-        </div>`;
-      }).join('');
+      if(tw) tw.textContent=vocab.length;
+      if(dw){ dw.textContent=due; dw.style.color=due>0?'var(--orange)':'var(--green)'; }
+      if(dd) dd.textContent=done;
+      if(rb) rb.style.width=Math.round(done/30*100)+'%';
     } catch(e) { console.error(e); }
-  }
-
-  uploadHinata() { document.getElementById('hinataInput')?.click(); }
-
-  setHinata(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const url = e.target.result;
-      localStorage.setItem('sh_hinata', url);
-      this._showHinata(url);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  _loadHinata() {
-    const url = localStorage.getItem('sh_hinata');
-    if (url) this._showHinata(url);
-  }
-
-  _showHinata(url) {
-    const img = document.getElementById('hinataImg');
-    const ph  = document.getElementById('hinataPlaceholder');
-    if (img) { img.src=url; img.style.display='block'; img.onclick=()=>dashPage.uploadHinata(); }
-    if (ph)  ph.style.display='none';
   }
 }

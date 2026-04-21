@@ -17,9 +17,15 @@ export class AuthPage {
         </div>
 
         <!-- Tabs -->
-        <div class="auth-tabs">
-          <button id="loginTab" class="auth-tab active" onclick="authPage.switchTab('login')">Đăng nhập</button>
-          <button id="registerTab" class="auth-tab" onclick="authPage.switchTab('register')">Đăng ký</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg2);border-radius:var(--r-lg);padding:4px;margin-bottom:24px;border:1px solid var(--border2)">
+          <button id="loginTab" onclick="authPage.switchTab('login')"
+            style="padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:white;color:var(--blue);box-shadow:var(--shadow-xs)">
+            Đăng nhập
+          </button>
+          <button id="registerTab" onclick="authPage.switchTab('register')"
+            style="padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--muted)">
+            Đăng ký
+          </button>
         </div>
 
         <!-- LOGIN FORM -->
@@ -91,9 +97,15 @@ export class AuthPage {
     document.getElementById('loginForm').style.display  = isLogin ? 'block' : 'none';
     document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
     const lt = document.getElementById('loginTab'), rt = document.getElementById('registerTab');
-    lt.classList.toggle('active', isLogin);
-    rt.classList.toggle('active', !isLogin);
-    setTimeout(() => document.getElementById(isLogin ? 'loginUser' : 'regUser')?.focus(), 50);
+    if (isLogin) {
+      lt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;background:white;color:var(--blue);box-shadow:var(--shadow-xs)';
+      rt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted)';
+      setTimeout(() => document.getElementById('loginUser')?.focus(), 50);
+    } else {
+      rt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:700;cursor:pointer;background:white;color:var(--blue);box-shadow:var(--shadow-xs)';
+      lt.style.cssText='padding:9px;border-radius:var(--r-md);border:none;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted)';
+      setTimeout(() => document.getElementById('regUser')?.focus(), 50);
+    }
     this._setMsg('');
   }
 
